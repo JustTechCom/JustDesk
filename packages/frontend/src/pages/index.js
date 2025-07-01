@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { Monitor, Link2, Shield, Zap, Github, Globe } from 'lucide-react';
-import Layout from '../components/Layout';
 
 export default function Home() {
   const router = useRouter();
@@ -22,13 +21,47 @@ export default function Home() {
   };
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>JustDesk - Web Based Remote Desktop</title>
         <meta name="description" content="Share your screen instantly with just a web browser. No installation required." />
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        {/* Header */}
+        <header className="bg-black/50 backdrop-blur-md border-b border-white/10">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-600 rounded-lg">
+                  <Monitor className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-xl font-bold text-white">JustDesk</span>
+              </div>
+              
+              <nav className="hidden md:flex items-center space-x-8">
+                <a href="/" className="text-gray-300 hover:text-white transition-colors">
+                  Home
+                </a>
+                <a href="/documentation" className="text-gray-300 hover:text-white transition-colors">
+                  Documentation
+                </a>
+                <a href="/pricing" className="text-gray-300 hover:text-white transition-colors">
+                  Pricing
+                </a>
+                <a 
+                  href="https://github.com/yourusername/JustDesk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-gray-300 hover:text-white transition-colors"
+                >
+                  <Github className="w-5 h-5" />
+                </a>
+              </nav>
+            </div>
+          </div>
+        </header>
+
         {/* Hero Section */}
         <div className="container mx-auto px-4 pt-20 pb-16">
           <div className="text-center max-w-4xl mx-auto">
@@ -161,7 +194,19 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="bg-black/50 backdrop-blur-md border-t border-white/10 mt-24">
+          <div className="container mx-auto px-4 py-8">
+            <div className="text-center text-gray-400">
+              <p>© 2024 JustDesk. All rights reserved.</p>
+              <p className="mt-2">
+                Web-based remote desktop solution. No downloads required.
+              </p>
+            </div>
+          </div>
+        </footer>
       </div>
-    </Layout>
+    </>
   );
 }
