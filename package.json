@@ -1,0 +1,68 @@
+{
+  "name": "justdesk",
+  "version": "1.0.0",
+  "description": "Web-based remote desktop solution with no installation required",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "lerna run dev --parallel",
+    "build": "lerna run build",
+    "start": "lerna run start --parallel",
+    "test": "lerna run test",
+    "test:watch": "lerna run test:watch --parallel",
+    "lint": "lerna run lint",
+    "lint:fix": "lerna run lint:fix",
+    "clean": "lerna clean && rm -rf node_modules",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down -v",
+    "setup": "npm install && lerna bootstrap"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
+    "eslint": "^8.48.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "husky": "^8.0.3",
+    "lerna": "^7.2.0",
+    "lint-staged": "^14.0.1",
+    "prettier": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/JustDesk.git"
+  },
+  "keywords": [
+    "remote-desktop",
+    "webrtc",
+    "screen-sharing",
+    "peer-to-peer",
+    "realtime",
+    "websocket"
+  ],
+  "author": "JustDesk Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/JustDesk/issues"
+  },
+  "homepage": "https://github.com/yourusername/JustDesk#readme",
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml}": [
+      "prettier --write"
+    ]
+  }
+}

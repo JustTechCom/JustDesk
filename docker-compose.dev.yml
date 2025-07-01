@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./packages/frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./packages/frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_WS_URL=ws://localhost:3001
+    command: npm run dev
+
+  backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./packages/backend:/app
+      - /app/node_modules
+    ports:
+      - "3001:3001"
+      - "9229:9229"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - SESSION_SECRET=dev-secret
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=dev-redis-password
+    command: npm run dev
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass dev-redis-password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+
+volumes:
+  redis_dev_data:

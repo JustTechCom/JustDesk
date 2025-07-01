@@ -1,0 +1,47 @@
+services:
+  frontend:
+    build:
+      context: ./packages/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3002
+      - NEXT_PUBLIC_WS_URL=ws://localhost:3002
+    depends_on:
+      - backend
+    networks:
+      - justdesk
+
+  backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3001"
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=defaultpassword
+      - FRONTEND_URL=http://localhost:3000
+    depends_on:
+      - redis
+    networks:
+      - justdesk
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass defaultpassword
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - justdesk
+
+networks:
+  justdesk:
+    driver: bridge
+
+volumes:
+  redis_data:
