@@ -3,7 +3,7 @@ markdown# JustDesk 🖥️
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js CI](https://github.com/kadirertancam/JustDesk/actions/workflows/ci.yml/badge.svg)](https://github.com/kadirertancam/JustDesk/actions/workflows/ci.yml)
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/kadirertancam/justdesk)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/kadirtn)
 
 Web-based remote desktop solution that requires no installation. Share your screen instantly with just a web browser!
 
