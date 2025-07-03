@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "postinstall": "echo 'Backend dependencies installed'",
+    "dev": "nodemon src/server.js",
     "test": "jest",
     "lint": "eslint src/**/*.js"
   },
