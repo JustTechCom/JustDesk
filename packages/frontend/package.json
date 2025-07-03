@@ -9,6 +9,9 @@
     "postinstall": "echo 'Frontend dependencies installed'",
     "lint": "next lint"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "next": "^14.0.0",
     "react": "^18.2.0",
