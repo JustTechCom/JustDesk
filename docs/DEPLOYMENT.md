@@ -13,7 +13,7 @@
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/JustDesk.git
+git clone https://github.com/kadirertancam/JustDesk.git
 cd JustDesk
 ```
 2. Configure Environment

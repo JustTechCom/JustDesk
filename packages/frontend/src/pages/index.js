@@ -50,7 +50,7 @@ export default function Home() {
                   Pricing
                 </a>
                 <a 
-                  href="https://github.com/yourusername/JustDesk"
+                  href="https://github.com/kadirertancam/JustDesk"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center text-gray-300 hover:text-white transition-colors"

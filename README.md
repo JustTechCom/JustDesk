@@ -103,7 +103,7 @@ Steps to reproduce
 
 Support Channels
 
-GitHub Issues: https://github.com/yourusername/JustDesk/issues
+GitHub Issues: https://github.com/kadirertancam/JustDesk/issues
 Email: support@justdesk.io
 Discord: https://discord.gg/justdesk
 

@@ -109,7 +109,7 @@ export default function Footer() {
             <a href="https://twitter.com/justdesk" className="text-gray-400 hover:text-white transition-colors">
               <Twitter className="w-5 h-5" />
             </a>
-            <a href="https://github.com/yourusername/JustDesk" className="text-gray-400 hover:text-white transition-colors">
+            <a href="https://github.com/kadirertancam/JustDesk" className="text-gray-400 hover:text-white transition-colors">
               <Github className="w-5 h-5" />
             </a>
             <a href="https://linkedin.com/company/justdesk" className="text-gray-400 hover:text-white transition-colors">
