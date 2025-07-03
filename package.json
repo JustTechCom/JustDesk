@@ -7,10 +7,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "lerna run dev --parallel",
-    "postinstall": "npm install --prefix packages/backend && npm install --prefix packages/frontend",
-    "build": "npm run build --prefix packages/frontend",
-    "start": "npm start --prefix packages/backend",
+    "build": "npm run build:frontend",
+    "build:frontend": "cd packages/frontend && npm run build",
+    "build:backend": "cd packages/backend && npm install",
+    "start": "npm run start:frontend",
+    "start:frontend": "cd packages/frontend && npm start"
     "test": "lerna run test",
     "test:watch": "lerna run test:watch --parallel",
     "lint": "lerna run lint",
