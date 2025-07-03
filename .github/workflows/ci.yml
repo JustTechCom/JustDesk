@@ -21,11 +21,8 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        # Cache root'ta değil, sub-packages'ta
-        cache: 'npm'
-        cache-dependency-path: |
-          packages/frontend/package-lock.json
-          packages/backend/package-lock.json
+        # Cache'i devre dışı bırak, manual yapacağız
+        # cache: 'npm'
 
     - name: Install frontend dependencies
       working-directory: ./packages/frontend
@@ -78,10 +75,7 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: |
-          packages/frontend/package-lock.json
-          packages/backend/package-lock.json
+        # Cache'i devre dışı bırak
 
     - name: Install frontend dependencies
       working-directory: ./packages/frontend
@@ -140,10 +134,7 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: |
-          packages/frontend/package-lock.json
-          packages/backend/package-lock.json
+        # Cache'i devre dışı bırak
 
     - name: Install frontend dependencies
       working-directory: ./packages/frontend
