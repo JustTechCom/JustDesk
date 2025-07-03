@@ -8,8 +8,9 @@
   ],
   "scripts": {
     "dev": "lerna run dev --parallel",
-    "build": "lerna run build",
-    "start": "lerna run start --parallel",
+    "postinstall": "npm install --prefix packages/backend && npm install --prefix packages/frontend",
+    "build": "npm run build --prefix packages/frontend",
+    "start": "npm start --prefix packages/backend"
     "test": "lerna run test",
     "test:watch": "lerna run test:watch --parallel",
     "lint": "lerna run lint",
