@@ -42,7 +42,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/JustDesk.git"
+    "url": "git+https://github.com/kadirertancam/JustDesk.git"
   },
   "keywords": [
     "remote-desktop",
@@ -55,9 +55,9 @@
   "author": "JustDesk Team",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/yourusername/JustDesk/issues"
+    "url": "https://github.com/kadirertancam/JustDesk/issues"
   },
-  "homepage": "https://github.com/yourusername/JustDesk#readme",
+  "homepage": "https://github.com/kadirertancam/JustDesk#readme",
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --fix",

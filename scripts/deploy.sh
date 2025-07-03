@@ -14,7 +14,7 @@ NC='\033[0m'
 DEPLOY_USER="deploy"
 DEPLOY_HOST=""
 DEPLOY_PATH="/opt/justdesk"
-REPOSITORY="https://github.com/yourusername/JustDesk.git"
+REPOSITORY="https://github.com/kadirertancam/JustDesk.git"
 BRANCH="main"
 
 # Get deployment target

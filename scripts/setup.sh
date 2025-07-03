@@ -31,7 +31,7 @@ sudo apt install -y docker.io docker-compose nginx certbot python3-certbot-nginx
 # Clone repository
 if [ ! -d "JustDesk" ]; then
     echo -e "${YELLOW}Cloning JustDesk repository...${NC}"
-    git clone https://github.com/yourusername/JustDesk.git
+    git clone https://github.com/kadirertancam/JustDesk.git
 fi
 
 cd JustDesk
