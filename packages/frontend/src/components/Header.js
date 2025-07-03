@@ -26,19 +26,7 @@ export default function Header() {
               }`}
             >
               Home
-            </Link>
-            <Link 
-              href="/documentation" 
-              className="text-gray-300 hover:text-white transition-colors"
-            >
-              Documentation
-            </Link>
-            <Link 
-              href="/pricing" 
-              className="text-gray-300 hover:text-white transition-colors"
-            >
-              Pricing
-            </Link>
+            </Link> 
             <a 
               href="https://github.com/kadirertancam/JustDesk"
               target="_blank"

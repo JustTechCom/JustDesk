@@ -42,13 +42,7 @@ export default function Home() {
               <nav className="hidden md:flex items-center space-x-8">
                 <a href="/" className="text-gray-300 hover:text-white transition-colors">
                   Home
-                </a>
-                <a href="/documentation" className="text-gray-300 hover:text-white transition-colors">
-                  Documentation
-                </a>
-                <a href="/pricing" className="text-gray-300 hover:text-white transition-colors">
-                  Pricing
-                </a>
+                </a> 
                 <a 
                   href="https://github.com/kadirertancam/JustDesk"
                   target="_blank"
