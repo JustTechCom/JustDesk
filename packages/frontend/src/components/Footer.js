@@ -93,7 +93,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="mt-8 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © 2024 JustDesk – Released under the MIT License.
+            © 2024 JustDesk – Released under the MIT License
           </p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <a href="https://twitter.com/justdesk" className="text-gray-400 hover:text-white transition-colors">
