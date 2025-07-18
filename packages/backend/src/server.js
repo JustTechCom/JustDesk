@@ -243,6 +243,7 @@ app.get('/api/health', healthLimiter, async (req, res) => {
   }
 });
 
+
 // Room info endpoint with strict rate limiting
 app.get('/api/room/:roomId', strictLimiter, async (req, res) => {
   const { roomId } = req.params;
@@ -265,7 +266,9 @@ app.get('/api/room/:roomId', strictLimiter, async (req, res) => {
       roomId: room.roomId,
       created: room.created,
       participantCount: room.participants.length,
-      active: true
+      active: true,
+      sessionStartTime: room.sessionStartTime
+
     });
   } catch (error) {
     console.error('Room info error:', error);
@@ -309,7 +312,8 @@ io.use((socket, next) => {
   next();
 });
 
-// Socket.IO connection handling
+// Socket.IO connection handling - UPDATED VERSION
+
 io.on('connection', (socket) => {
   console.log(`✅ New socket connection: ${socket.id}`);
 
@@ -328,6 +332,7 @@ io.on('connection', (socket) => {
 
       const roomId = generateRoomId();
       const password = generatePassword();
+      const now = Date.now();
       
       console.log(`🎲 Generated Room ID: ${roomId}, Password: ${password}`);
       
@@ -335,8 +340,10 @@ io.on('connection', (socket) => {
         hostId: socket.id,
         roomId,
         password,
-        created: Date.now(),
-        participants: []
+        created: now,
+        sessionStartTime: now,
+        participants: [], // Boş array ile başla
+        lastActivity: now
       };
 
       // Store in Redis with expiration
@@ -347,15 +354,31 @@ io.on('connection', (socket) => {
 
       // Join socket room
       socket.join(roomId);
-      connections.set(socket.id, { roomId, role: 'host', connectedAt: Date.now() });
+      connections.set(socket.id, { 
+        roomId, 
+        role: 'host', 
+        connectedAt: now,
+        sessionStartTime: now
+      });
+
 
       console.log(`✅ Room created successfully: ${roomId}`);
       
       // Send response
       if (callback && typeof callback === 'function') {
-        callback({ success: true, roomId, password });
+        callback({ 
+          success: true, 
+          roomId, 
+          password,
+          sessionStartTime: now
+        });
       } else {
-        socket.emit('room-created', { success: true, roomId, password });
+        socket.emit('room-created', { 
+          success: true, 
+          roomId, 
+          password,
+          sessionStartTime: now
+        });
       }
 
     } catch (error) {
@@ -400,22 +423,49 @@ io.on('connection', (socket) => {
         return;
       }
 
+      // Check if room is full
+      if (room.participants.length >= 10) {
+        console.log(`❌ Room is full: ${roomId}`);
+        callback({ success: false, error: 'Room is full' });
+        return;
+      }
+
       // Join room
       socket.join(roomId);
-      connections.set(socket.id, { roomId, role: 'viewer', connectedAt: Date.now() });
-      
-      // Update participants
-      room.participants.push(socket.id);
-      await redis.setex(`room:${roomId}`, 3600, JSON.stringify(room));
+      connections.set(socket.id, { 
+        roomId, 
+        role: 'viewer', 
+        connectedAt: Date.now() 
+      });
 
-      // Notify host
+      
+      // Add to participants if not already there
+      if (!room.participants.includes(socket.id)) {
+        room.participants.push(socket.id);
+        room.lastActivity = Date.now();
+        await redis.setex(`room:${roomId}`, 3600, JSON.stringify(room));
+        console.log(`👤 Added viewer ${socket.id} to room ${roomId}. Total participants: ${room.participants.length}`);
+      }
+
+      // Notify host about new viewer - CRITICAL!
+      console.log(`📢 Notifying host ${room.hostId} about new viewer ${socket.id}`);
       socket.to(room.hostId).emit('viewer-joined', {
         viewerId: socket.id,
         roomId,
-        requestStream: true
+        requestStream: true,
+        joinedAt: Date.now(),
+        totalViewers: room.participants.length
       });
 
-      console.log(`✅ Viewer ${socket.id} joined room ${roomId}`);
+      // Also notify all participants in room
+      socket.to(roomId).emit('participant-update', {
+        type: 'joined',
+        viewerId: socket.id,
+        totalViewers: room.participants.length
+
+      });
+
+      console.log(`✅ Viewer ${socket.id} joined room ${roomId}. Total viewers: ${room.participants.length}`);
       callback({ success: true, hostId: room.hostId });
       
     } catch (error) {
@@ -445,7 +495,32 @@ io.on('connection', (socket) => {
     socket.to(to).emit('ice-candidate', { candidate, from: socket.id });
   });
 
-  // Handle disconnection
+  // Debug endpoint to check room status
+  socket.on('get-room-status', async (roomId, callback) => {
+    try {
+      const roomData = await redis.get(`room:${roomId}`);
+      if (roomData) {
+        const room = JSON.parse(roomData);
+        callback({
+          success: true,
+          data: {
+            roomId: room.roomId,
+            participantCount: room.participants.length,
+            participants: room.participants,
+            created: room.created,
+            sessionStartTime: room.sessionStartTime,
+            lastActivity: room.lastActivity
+          }
+        });
+      } else {
+        callback({ success: false, error: 'Room not found' });
+      }
+    } catch (error) {
+      callback({ success: false, error: error.message });
+    }
+  });
+
+  // Handle disconnection - UPDATED
   socket.on('disconnect', async () => {
     console.log(`👋 Socket disconnected: ${socket.id}`);
     
@@ -456,21 +531,66 @@ io.on('connection', (socket) => {
     
     try {
       if (role === 'host') {
-        // Host disconnected, close room
-        await redis.del(`room:${roomId}`);
-        io.to(roomId).emit('host-disconnected');
-        console.log(`🏠 Room ${roomId} closed (host disconnected)`);
-      } else {
-        // Viewer disconnected
+        // Host disconnected, close room and notify all viewers
+        console.log(`🏠 Host ${socket.id} disconnected from room ${roomId}`);
+        
+        // Get room data before deletion
         const roomData = await redis.get(`room:${roomId}`);
         if (roomData) {
           const room = JSON.parse(roomData);
+          console.log(`📢 Notifying ${room.participants.length} viewers about host disconnect`);
+        }
+        
+        // Delete room from Redis
+        await redis.del(`room:${roomId}`);
+        
+        // Notify all viewers in the room
+        socket.to(roomId).emit('host-disconnected');
+        
+        // Clean up all viewer connections from this room
+        const roomConnections = Array.from(connections.entries())
+          .filter(([_, conn]) => conn.roomId === roomId);
+        
+        roomConnections.forEach(([socketId]) => {
+          connections.delete(socketId);
+          console.log(`🧹 Cleaned up connection: ${socketId}`);
+        });
+        
+        console.log(`🏠 Room ${roomId} closed completely`);
+        
+      } else if (role === 'viewer') {
+        // Viewer disconnected, update room participants
+        console.log(`👤 Viewer ${socket.id} disconnected from room ${roomId}`);
+        
+        const roomData = await redis.get(`room:${roomId}`);
+        if (roomData) {
+          const room = JSON.parse(roomData);
+          
+          // Remove from participants list
+          const originalCount = room.participants.length;
           room.participants = room.participants.filter(id => id !== socket.id);
+          room.lastActivity = Date.now();
+          
+          console.log(`📊 Participant count changed: ${originalCount} -> ${room.participants.length}`);
+          
+          // Update room in Redis
           await redis.setex(`room:${roomId}`, 3600, JSON.stringify(room));
           
+          // Notify host about viewer disconnect - CRITICAL!
+          console.log(`📢 Notifying host ${room.hostId} about viewer ${socket.id} disconnect`);
           socket.to(room.hostId).emit('viewer-disconnected', {
-            viewerId: socket.id
+            viewerId: socket.id,
+            totalViewers: room.participants.length
           });
+          
+          // Also notify room
+          socket.to(roomId).emit('participant-update', {
+            type: 'left',
+            viewerId: socket.id,
+            totalViewers: room.participants.length
+          });
+          
+          console.log(`✅ Viewer ${socket.id} removed. Remaining viewers: ${room.participants.length}`);
         }
       }
     } catch (error) {
@@ -478,6 +598,13 @@ io.on('connection', (socket) => {
     }
     
     connections.delete(socket.id);
+  });
+
+  // Ping endpoint for connection health
+  socket.on('ping', (callback) => {
+    if (callback && typeof callback === 'function') {
+      callback({ pong: true, timestamp: Date.now() });
+    }
   });
 });
 
@@ -494,6 +621,7 @@ app.use((err, req, res, next) => {
     timestamp: new Date().toISOString()
   });
 });
+
 
 // 404 handler
 app.use((req, res) => {
@@ -514,13 +642,36 @@ setInterval(() => {
   }
 }, 300000); // Run every 5 minutes
 
+// Cleanup expired connections periodically
+setInterval(async () => {
+  console.log('🧹 Running connection cleanup...');
+  const now = Date.now();
+  let cleanedCount = 0;
+  
+  for (const [socketId, connection] of connections.entries()) {
+    // Clean up connections older than 2 hours
+    if (now - connection.connectedAt > 2 * 60 * 60 * 1000) {
+      connections.delete(socketId);
+      cleanedCount++;
+    }
+  }
+  
+  if (cleanedCount > 0) {
+    console.log(`🧹 Cleaned up ${cleanedCount} expired connections`);
+  }
+}, 10 * 60 * 1000); // Run every 10 minutes
+
+
 // Start server
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 JustDesk backend running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 CORS origins: ${corsOptions.origin}`);
+  console.log(`🔗 CORS origins: ${Array.isArray(corsOptions.origin) ? corsOptions.origin.join(', ') : corsOptions.origin}`);
   console.log(`🛡️ Security middleware enabled`);
+  console.log(`📊 Active connections tracking: enabled`);
+  console.log(`🧹 Automatic cleanup: enabled`);
+
 });
 
 // Graceful shutdown

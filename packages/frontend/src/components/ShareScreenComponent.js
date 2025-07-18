@@ -16,6 +16,7 @@ export default function ShareScreenComponent() {
   const [viewers, setViewers] = useState([]);
   const [error, setError] = useState('');
   const [connectionError, setConnectionError] = useState('');
+  const [sessionStartTime, setSessionStartTime] = useState(null);
   
   const { socket, connected } = useSocket();
   const { startScreenShare, stopScreenShare, stream } = useWebRTC(socket);
@@ -40,9 +41,11 @@ export default function ShareScreenComponent() {
     socket.emit('create-room', (response) => {
       console.log('Room creation response:', response);
       if (response && response.success) {
-        setRoomId(response.roomId);
-        setPassword(response.password);
+        setRoomId(String(response.roomId));
+        setPassword(String(response.password));
+        setSessionStartTime(Date.now());
         setConnectionError('');
+        console.log('Room created successfully:', response.roomId);
       } else {
         setError(response?.error || 'Failed to create room');
         setConnectionError('Failed to create room');
@@ -69,40 +72,70 @@ export default function ShareScreenComponent() {
 
   useEffect(() => {
     if (socket) {
-      socket.on('viewer-joined', ({ viewerId }) => {
-        setViewers(prev => [...prev, { id: viewerId, joinedAt: Date.now() }]);
-      });
+      const handleViewerJoined = ({ viewerId, roomId: joinedRoomId }) => {
+        console.log('Viewer joined:', viewerId, 'Room:', joinedRoomId);
+        setViewers(prev => {
+          // Eğer viewer zaten listede yoksa ekle
+          const exists = prev.some(v => v.id === viewerId);
+          if (!exists) {
+            const newViewer = { id: viewerId, joinedAt: Date.now() };
+            console.log('Adding viewer to list:', newViewer);
+            return [...prev, newViewer];
+          }
+          return prev;
+        });
+      };
 
-      socket.on('viewer-disconnected', ({ viewerId }) => {
-        setViewers(prev => prev.filter(v => v.id !== viewerId));
-      });
+      const handleViewerDisconnected = ({ viewerId }) => {
+        console.log('Viewer disconnected:', viewerId);
+        setViewers(prev => {
+          const filtered = prev.filter(v => v.id !== viewerId);
+          console.log('Removing viewer from list. New count:', filtered.length);
+          return filtered;
+        });
+      };
 
-      socket.on('connect', () => {
+      const handleConnect = () => {
         console.log('Socket connected in component');
         setConnectionError('');
-      });
+      };
 
-      socket.on('disconnect', () => {
+      const handleDisconnect = () => {
         console.log('Socket disconnected');
         setConnectionError('Disconnected from server');
-      });
+      };
 
-      socket.on('connect_error', (error) => {
+      const handleConnectError = (error) => {
         console.error('Socket connection error:', error);
         setConnectionError('Failed to connect to server');
-      });
-    }
+      };
 
-    return () => {
-      if (socket) {
-        socket.off('viewer-joined');
-        socket.off('viewer-disconnected');
-        socket.off('connect');
-        socket.off('disconnect');
-        socket.off('connect_error');
-      }
-    };
+      // Event listener'ları ekle
+      socket.on('viewer-joined', handleViewerJoined);
+      socket.on('viewer-disconnected', handleViewerDisconnected);
+      socket.on('viewer-left', handleViewerDisconnected); // Alternatif event adı için
+      socket.on('connect', handleConnect);
+      socket.on('disconnect', handleDisconnect);
+      socket.on('connect_error', handleConnectError);
+
+      // Debug için mevcut viewer sayısını logla
+      console.log('Current viewers count:', viewers.length);
+
+      return () => {
+        socket.off('viewer-joined', handleViewerJoined);
+        socket.off('viewer-disconnected', handleViewerDisconnected);
+        socket.off('viewer-left', handleViewerDisconnected);
+        socket.off('connect', handleConnect);
+        socket.off('disconnect', handleDisconnect);
+        socket.off('connect_error', handleConnectError);
+      };
+    }
   }, [socket]);
+
+  // Debug: viewer sayısının değişimini izle
+  useEffect(() => {
+    console.log('Viewers updated:', viewers);
+  }, [viewers]);
 
   return (
     <>
@@ -127,6 +160,15 @@ export default function ShareScreenComponent() {
                   {connectionError}
                 </div>
               )}
+              
+              {/* Debug bilgisi - sadece development için */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-2 text-sm text-gray-500">
+                  Debug: Connected: {connected ? 'Yes' : 'No'} | 
+                  Room: {roomId || 'None'} | 
+                  Viewers: {viewers.length}
+                </div>
+              )}
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
@@ -146,6 +188,7 @@ export default function ShareScreenComponent() {
                   password={password}
                   viewers={viewers}
                   isSharing={isSharing}
+                  sessionStartTime={sessionStartTime}
                 />
               </div>
             </div>
@@ -164,7 +207,7 @@ export default function ShareScreenComponent() {
                     </div>
                   </div>
                   <div className="text-gray-400 text-sm">
-                    Room expires in 59:45
+                    Session active since {sessionStartTime ? new Date(sessionStartTime).toLocaleTimeString() : '--:--'}
                   </div>
                 </div>
               </div>
