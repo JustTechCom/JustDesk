@@ -15,10 +15,10 @@ export default function ShareScreenComponent() {
   const [isSharing, setIsSharing] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [error, setError] = useState('');
-  const [connectionError, setConnectionError] = useState('');
+  const [connectionError, setConnectionError] = useState(''); 
   const [sessionStartTime, setSessionStartTime] = useState(null); // Room creation time
   const [sharingStartTime, setSharingStartTime] = useState(null); // Actual sharing start time
-  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false); 
   
   const { socket, connected } = useSocket();
   const { startScreenShare, stopScreenShare, stream } = useWebRTC(socket);
@@ -53,8 +53,8 @@ export default function ShareScreenComponent() {
       
       if (response && response.success) {
         setRoomId(String(response.roomId));
-        setPassword(String(response.password));
-        setSessionStartTime(response.sessionStartTime || Date.now()); // Room creation time
+        setPassword(String(response.password)); 
+        setSessionStartTime(response.sessionStartTime || Date.now()); // Room creation time 
         setConnectionError('');
         console.log('Room created successfully:', response.roomId);
       } else {
@@ -110,7 +110,7 @@ export default function ShareScreenComponent() {
 
   // Socket event handlers
   useEffect(() => {
-    if (socket) {
+    if (socket) { 
       const handleViewerJoined = ({ viewerId, roomId: joinedRoomId, joinedAt }) => {
         console.log('🎯 Viewer joined event received:', viewerId, 'Room:', joinedRoomId);
         setViewers(prev => {
@@ -126,21 +126,21 @@ export default function ShareScreenComponent() {
             console.log('📊 New viewers array:', newViewers);
             return newViewers;
           }
-          console.log('⚠️ Viewer already exists in list');
+          console.log('⚠️ Viewer already exists in list'); 
           return prev;
         });
       };
-
+ 
       const handleViewerDisconnected = ({ viewerId, totalViewers }) => {
         console.log('🎯 Viewer disconnected event received:', viewerId);
         setViewers(prev => {
           const filtered = prev.filter(v => v.id !== viewerId);
           console.log('➖ Removing viewer from list. New count:', filtered.length);
-          console.log('📊 Updated viewers array:', filtered);
+          console.log('📊 Updated viewers array:', filtered); 
           return filtered;
         });
       };
-
+ 
       const handleParticipantUpdate = ({ type, viewerId, totalViewers }) => {
         console.log('🎯 Participant update:', type, viewerId, 'Total:', totalViewers);
         if (type === 'joined') {
@@ -151,38 +151,37 @@ export default function ShareScreenComponent() {
       };
 
       const handleConnect = () => {
-        console.log('🔌 Socket connected in component');
+        console.log('🔌 Socket connected in component'); 
         setConnectionError('');
       };
 
-      const handleDisconnect = () => {
-        console.log('🔌 Socket disconnected');
+      const handleDisconnect = () => { 
+        console.log('🔌 Socket disconnected'); 
         setConnectionError('Disconnected from server');
       };
 
-      const handleConnectError = (error) => {
-        console.error('🔌 Socket connection error:', error);
+      const handleConnectError = (error) => { 
+        console.error('🔌 Socket connection error:', error); 
         setConnectionError('Failed to connect to server');
       };
 
       // Event listener'ları ekle
       socket.on('viewer-joined', handleViewerJoined);
-      socket.on('viewer-disconnected', handleViewerDisconnected);
+      socket.on('viewer-disconnected', handleViewerDisconnected); 
       socket.on('viewer-left', handleViewerDisconnected);
-      socket.on('participant-update', handleParticipantUpdate);
+      socket.on('participant-update', handleParticipantUpdate); 
       socket.on('connect', handleConnect);
       socket.on('disconnect', handleDisconnect);
-      socket.on('connect_error', handleConnectError);
-
+      socket.on('connect_error', handleConnectError); 
       return () => {
         socket.off('viewer-joined', handleViewerJoined);
         socket.off('viewer-disconnected', handleViewerDisconnected);
-        socket.off('viewer-left', handleViewerDisconnected);
-        socket.off('participant-update', handleParticipantUpdate);
+        socket.off('viewer-left', handleViewerDisconnected); 
+        socket.off('participant-update', handleParticipantUpdate); 
         socket.off('connect', handleConnect);
         socket.off('disconnect', handleDisconnect);
         socket.off('connect_error', handleConnectError);
-      };
+      }; 
     }
   }, [socket]);
 
@@ -217,7 +216,12 @@ export default function ShareScreenComponent() {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
     return null;
-  };
+  }; 
+
+  // Debug: viewer sayısının değişimini izle
+  useEffect(() => {
+    console.log('Viewers updated:', viewers);
+  }, [viewers]);
 
   return (
     <>
@@ -242,7 +246,7 @@ export default function ShareScreenComponent() {
                   {connectionError}
                 </div>
               )}
-              
+               
               {/* Session Status */}
               {roomId && (
                 <div className="mt-4 inline-flex items-center space-x-4 text-sm">
@@ -277,7 +281,7 @@ export default function ShareScreenComponent() {
                         Debug Room
                       </button>
                     )}
-                  </div>
+                  </div> 
                 </div>
               )}
             </div>
@@ -298,8 +302,8 @@ export default function ShareScreenComponent() {
                   roomId={roomId}
                   password={password}
                   viewers={viewers}
-                  isSharing={isSharing}
-                  sharingStartTime={sharingStartTime} // Sharing başlama zamanı
+                  isSharing={isSharing} 
+                  sharingStartTime={sharingStartTime} // Sharing başlama zamanı 
                 />
               </div>
             </div>
@@ -322,7 +326,7 @@ export default function ShareScreenComponent() {
                       <span className="text-white">Duration: {getSessionInfo() || '0:00'}</span>
                     </div>
                   </div>
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-gray-400 text-sm"> 
                     Started at {sharingStartTime ? new Date(sharingStartTime).toLocaleTimeString() : '--:--'}
                   </div>
                 </div>
@@ -345,7 +349,7 @@ export default function ShareScreenComponent() {
                   </div>
                   <div className="text-yellow-200 text-sm flex items-center">
                     <Play className="w-4 h-4 mr-1" />
-                    Click "Start Sharing" to begin
+                    Click "Start Sharing" to begin 
                   </div>
                 </div>
               </div>

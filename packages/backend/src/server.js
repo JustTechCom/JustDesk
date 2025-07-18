@@ -243,6 +243,7 @@ app.get('/api/health', healthLimiter, async (req, res) => {
   }
 });
 
+
 // Room info endpoint with strict rate limiting
 app.get('/api/room/:roomId', strictLimiter, async (req, res) => {
   const { roomId } = req.params;
@@ -265,10 +266,10 @@ app.get('/api/room/:roomId', strictLimiter, async (req, res) => {
       roomId: room.roomId,
       created: room.created,
       participantCount: room.participants.length,
-      active: true,
+      active: true, 
       sessionStartTime: room.sessionStartTime,
       sharingStartTime: room.sharingStartTime,
-      isSharing: room.isSharing || false
+      isSharing: room.isSharing || false 
     });
   } catch (error) {
     console.error('Room info error:', error);
@@ -311,8 +312,8 @@ io.use((socket, next) => {
   rateData.count++;
   next();
 });
-
-// Socket.IO connection handling - COMPLETE VERSION
+ 
+// Socket.IO connection handling - COMPLETE VERSION 
 io.on('connection', (socket) => {
   console.log(`✅ New socket connection: ${socket.id}`);
 
@@ -342,10 +343,10 @@ io.on('connection', (socket) => {
         password,
         created: now,
         sessionStartTime: now,
-        participants: [], // Boş array ile başla
+        participants: [], // Boş array ile başla 
         lastActivity: now,
         isSharing: false,
-        sharingStartTime: null
+        sharingStartTime: null 
       };
 
       // Store in Redis with expiration
@@ -361,7 +362,7 @@ io.on('connection', (socket) => {
         role: 'host', 
         connectedAt: now,
         sessionStartTime: now
-      });
+      }); 
 
       console.log(`✅ Room created successfully: ${roomId}`);
       
@@ -438,7 +439,7 @@ io.on('connection', (socket) => {
         roomId, 
         role: 'viewer', 
         connectedAt: Date.now() 
-      });
+      }); 
       
       // Add to participants if not already there
       if (!room.participants.includes(socket.id)) {
@@ -462,7 +463,7 @@ io.on('connection', (socket) => {
       socket.to(roomId).emit('participant-update', {
         type: 'joined',
         viewerId: socket.id,
-        totalViewers: room.participants.length
+        totalViewers: room.participants.length 
       });
 
       console.log(`✅ Viewer ${socket.id} joined room ${roomId}. Total viewers: ${room.participants.length}`);
@@ -557,8 +558,8 @@ io.on('connection', (socket) => {
     
     socket.to(to).emit('ice-candidate', { candidate, from: socket.id });
   });
-
-  // DEBUG: Get room status
+ 
+  // DEBUG: Get room status 
   socket.on('get-room-status', async (roomId, callback) => {
     try {
       const roomData = await redis.get(`room:${roomId}`);
@@ -571,10 +572,10 @@ io.on('connection', (socket) => {
             participantCount: room.participants.length,
             participants: room.participants,
             created: room.created,
-            sessionStartTime: room.sessionStartTime,
+            sessionStartTime: room.sessionStartTime, 
             lastActivity: room.lastActivity,
             isSharing: room.isSharing || false,
-            sharingStartTime: room.sharingStartTime
+            sharingStartTime: room.sharingStartTime 
           }
         });
       } else {
@@ -584,7 +585,7 @@ io.on('connection', (socket) => {
       callback({ success: false, error: error.message });
     }
   });
-
+ 
   // DEBUG: Get sharing stats
   socket.on('get-sharing-stats', async (roomId, callback) => {
     try {
@@ -624,7 +625,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // DISCONNECT EVENT
+  // DISCONNECT EVENT 
   socket.on('disconnect', async () => {
     console.log(`👋 Socket disconnected: ${socket.id}`);
     
@@ -703,6 +704,13 @@ io.on('connection', (socket) => {
     
     connections.delete(socket.id);
   });
+
+  // Ping endpoint for connection health
+  socket.on('ping', (callback) => {
+    if (callback && typeof callback === 'function') {
+      callback({ pong: true, timestamp: Date.now() });
+    }
+  });
 });
 
 // Error handling middleware
@@ -718,6 +726,7 @@ app.use((err, req, res, next) => {
     timestamp: new Date().toISOString()
   });
 });
+
 
 // 404 handler
 app.use((req, res) => {
@@ -756,7 +765,7 @@ setInterval(async () => {
     console.log(`🧹 Cleaned up ${cleanedCount} expired connections`);
   }
 }, 10 * 60 * 1000); // Run every 10 minutes
-
+ 
 // Session timeout checker - her 30 saniyede bir çalışır
 setInterval(async () => {
   console.log('🕐 Checking for session timeouts...');
@@ -807,6 +816,7 @@ setInterval(async () => {
     console.error('❌ Error in session timeout checker:', error);
   }
 }, 30 * 1000); // Her 30 saniyede bir çalıştır
+ 
 
 // Start server
 const PORT = process.env.PORT || 3001;
@@ -816,9 +826,10 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🔗 CORS origins: ${Array.isArray(corsOptions.origin) ? corsOptions.origin.join(', ') : corsOptions.origin}`);
   console.log(`🛡️ Security middleware enabled`);
   console.log(`📊 Active connections tracking: enabled`);
-  console.log(`🧹 Automatic cleanup: enabled`);
+  console.log(`🧹 Automatic cleanup: enabled`); 
   console.log(`⏰ Session timeout checking: enabled (1 hour limit)`);
   console.log(`🎥 Sharing event tracking: enabled`);
+ 
 });
 
 // Graceful shutdown

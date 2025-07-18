@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Copy, CheckCircle, Users, Lock, Clock, Share2 } from 'lucide-react';
-
+ 
 export default function ConnectionPanel({ roomId, password, viewers, isSharing, sharingStartTime }) {
   const [copiedField, setCopiedField] = useState('');
   const [timeRemaining, setTimeRemaining] = useState('--:--');
-  const [sessionDuration, setSessionDuration] = useState('--:--');
+  const [sessionDuration, setSessionDuration] = useState('--:--'); 
 
   const copyToClipboard = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -16,7 +16,7 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
     const url = `${window.location.origin}/view?room=${roomId}&pwd=${password}`;
     copyToClipboard(url, 'link');
   };
-
+ 
   // Gerçek zamanlı süre hesaplama - SADECE sharing başladığında
   useEffect(() => {
     if (!isSharing || !sharingStartTime) {
@@ -68,7 +68,7 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
     if (minutes > 10) return 'text-green-400';
     if (minutes > 5) return 'text-yellow-400';
     return 'text-red-400';
-  };
+  }; 
 
   return (
     <div className="space-y-6">
@@ -174,10 +174,10 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
               <span className="text-gray-300">
                 {isSharing ? 'Time Remaining' : 'Session Time'}
               </span>
-            </div>
+            </div> 
             <span className={`font-medium ${getTimerColor()}`}>
               {isSharing ? timeRemaining : '60:00'}
-            </span>
+            </span> 
           </div>
         </div>
 

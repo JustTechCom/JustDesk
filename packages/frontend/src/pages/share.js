@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Head from 'next/head';
-import { Wifi, Users, AlertCircle, Monitor, Clock, Play } from 'lucide-react';
+import Head from 'next/head'; 
+import { Wifi, Users, AlertCircle, Monitor, Clock, Play } from 'lucide-react'; 
 import Layout from '../components/Layout';
 import ScreenShare from '../components/ScreenShare';
 import ConnectionPanel from '../components/ConnectionPanel';
@@ -15,9 +15,9 @@ export default function ShareScreen() {
   const [isSharing, setIsSharing] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [error, setError] = useState('');
-  const [connectionError, setConnectionError] = useState('');
+  const [connectionError, setConnectionError] = useState(''); 
   const [sessionStartTime, setSessionStartTime] = useState(null); // Room creation
-  const [sharingStartTime, setSharingStartTime] = useState(null); // Actual sharing start
+  const [sharingStartTime, setSharingStartTime] = useState(null); // Actual sharing start 
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   
   const { socket, connected } = useSocket();
@@ -114,19 +114,20 @@ export default function ShareScreen() {
       const handleViewerJoined = ({ viewerId, roomId: joinedRoomId, joinedAt }) => {
         console.log('🎯 Viewer joined event received:', viewerId, 'Room:', joinedRoomId);
         setViewers(prev => {
+ 
           const exists = prev.some(v => v.id === viewerId);
           if (!exists) {
             const newViewer = { 
               id: viewerId, 
               joinedAt: joinedAt || Date.now() 
             };
-            console.log('➕ Adding viewer to list:', newViewer);
-            return [...prev, newViewer];
+            console.log('➕ Adding viewer to list:', newViewer); 
+            return [...prev, newViewer]; 
           }
           console.log('⚠️ Viewer already exists in list');
           return prev;
         });
-      };
+      }; 
 
       const handleViewerDisconnected = ({ viewerId, totalViewers }) => {
         console.log('🎯 Viewer disconnected event received:', viewerId);
@@ -228,6 +229,21 @@ export default function ShareScreen() {
     }
     return null;
   };
+ 
+
+  // Debug: viewer sayısının değişimini izle
+  useEffect(() => {
+    console.log('👥 Viewers state updated:', viewers.length, viewers);
+  }, [viewers]);
+
+  // Debugging function - development only
+  const debugRoomStatus = async () => {
+    if (socket && roomId) {
+      socket.emit('get-room-status', roomId, (response) => {
+        console.log('🐛 Room status debug:', response);
+      });
+    }
+  };
 
   return (
     <Layout>
@@ -252,7 +268,7 @@ export default function ShareScreen() {
                   {connectionError}
                 </div>
               )}
-              
+               
               {/* Session Status Indicator */}
               {roomId && (
                 <div className="mt-4 inline-flex items-center space-x-4 text-sm">
@@ -279,10 +295,11 @@ export default function ShareScreen() {
               {process.env.NODE_ENV === 'development' && (
                 <div className="mt-4 bg-gray-800/50 rounded-lg p-3 text-sm text-gray-300">
                   <div className="flex items-center justify-center space-x-4 flex-wrap">
+ 
                     <span>🔌 Connected: {connected ? '✅' : '❌'}</span>
                     <span>🏠 Room: {roomId || 'None'}</span>
                     <span>👥 Viewers: {viewers.length}</span>
-                    <span>📺 Sharing: {isSharing ? '✅' : '❌'}</span>
+                    <span>📺 Sharing: {isSharing ? '✅' : '❌'}</span> 
                     <span>⏱️ Timer: {sharingStartTime ? '✅' : '❌'}</span>
                     {roomId && (
                       <>
@@ -303,6 +320,7 @@ export default function ShareScreen() {
                           Sharing Stats
                         </button>
                       </>
+ 
                     )}
                   </div>
                 </div>
@@ -325,8 +343,9 @@ export default function ShareScreen() {
                   roomId={roomId}
                   password={password}
                   viewers={viewers}
-                  isSharing={isSharing}
+                  isSharing={isSharing} 
                   sharingStartTime={sharingStartTime} // Sharing timer için
+ 
                 />
               </div>
             </div>
@@ -351,7 +370,7 @@ export default function ShareScreen() {
                       </span>
                     </div>
                   </div>
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-gray-400 text-sm"> 
                     Started at {sharingStartTime ? new Date(sharingStartTime).toLocaleTimeString() : '--:--'}
                   </div>
                 </div>
@@ -374,7 +393,7 @@ export default function ShareScreen() {
                   </div>
                   <div className="text-yellow-200 text-sm flex items-center">
                     <Play className="w-4 h-4 mr-1" />
-                    Timer starts when you begin sharing
+                    Timer starts when you begin sharing 
                   </div>
                 </div>
               </div>
