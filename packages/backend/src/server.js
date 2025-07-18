@@ -243,6 +243,7 @@ app.get('/api/health', healthLimiter, async (req, res) => {
   }
 });
 
+
 // Room info endpoint with strict rate limiting
 app.get('/api/room/:roomId', strictLimiter, async (req, res) => {
   const { roomId } = req.params;
@@ -267,6 +268,7 @@ app.get('/api/room/:roomId', strictLimiter, async (req, res) => {
       participantCount: room.participants.length,
       active: true,
       sessionStartTime: room.sessionStartTime
+
     });
   } catch (error) {
     console.error('Room info error:', error);
@@ -311,6 +313,7 @@ io.use((socket, next) => {
 });
 
 // Socket.IO connection handling - UPDATED VERSION
+
 io.on('connection', (socket) => {
   console.log(`✅ New socket connection: ${socket.id}`);
 
@@ -357,6 +360,7 @@ io.on('connection', (socket) => {
         connectedAt: now,
         sessionStartTime: now
       });
+
 
       console.log(`✅ Room created successfully: ${roomId}`);
       
@@ -433,6 +437,7 @@ io.on('connection', (socket) => {
         role: 'viewer', 
         connectedAt: Date.now() 
       });
+
       
       // Add to participants if not already there
       if (!room.participants.includes(socket.id)) {
@@ -457,6 +462,7 @@ io.on('connection', (socket) => {
         type: 'joined',
         viewerId: socket.id,
         totalViewers: room.participants.length
+
       });
 
       console.log(`✅ Viewer ${socket.id} joined room ${roomId}. Total viewers: ${room.participants.length}`);
@@ -616,6 +622,7 @@ app.use((err, req, res, next) => {
   });
 });
 
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ 
@@ -654,6 +661,7 @@ setInterval(async () => {
   }
 }, 10 * 60 * 1000); // Run every 10 minutes
 
+
 // Start server
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, '0.0.0.0', () => {
@@ -663,6 +671,7 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🛡️ Security middleware enabled`);
   console.log(`📊 Active connections tracking: enabled`);
   console.log(`🧹 Automatic cleanup: enabled`);
+
 });
 
 // Graceful shutdown
