@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Monitor, Copy, CheckCircle, XCircle, Users, Wifi, AlertCircle } from 'lucide-react';
+import { Monitor, Copy, CheckCircle, XCircle, Users, Wifi, AlertCircle, Play, Square } from 'lucide-react';
 import Layout from './Layout';
 import ScreenShare from './ScreenShare';
 import ConnectionPanel from './ConnectionPanel';
@@ -15,20 +15,22 @@ export default function ShareScreenComponent() {
   const [isSharing, setIsSharing] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [error, setError] = useState('');
-  const [connectionError, setConnectionError] = useState('');
-  const [sessionStartTime, setSessionStartTime] = useState(null);
+  const [connectionError, setConnectionError] = useState(''); 
+  const [sessionStartTime, setSessionStartTime] = useState(null); // Room creation time
+  const [sharingStartTime, setSharingStartTime] = useState(null); // Actual sharing start time
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false); 
   
   const { socket, connected } = useSocket();
   const { startScreenShare, stopScreenShare, stream } = useWebRTC(socket);
 
   useEffect(() => {
-    if (connected && !roomId) {
+    if (connected && !roomId && !isCreatingRoom) {
       console.log('Socket connected, creating room...');
       createRoom();
     } else if (!connected) {
       setConnectionError('Connecting to server...');
     }
-  }, [connected, roomId]);
+  }, [connected, roomId, isCreatingRoom]);
 
   const createRoom = () => {
     if (!socket) {
@@ -37,13 +39,22 @@ export default function ShareScreenComponent() {
       return;
     }
 
+    if (isCreatingRoom) {
+      console.log('Room creation already in progress...');
+      return;
+    }
+
+    setIsCreatingRoom(true);
     console.log('Emitting create-room event...');
+    
     socket.emit('create-room', (response) => {
       console.log('Room creation response:', response);
+      setIsCreatingRoom(false);
+      
       if (response && response.success) {
         setRoomId(String(response.roomId));
-        setPassword(String(response.password));
-        setSessionStartTime(Date.now());
+        setPassword(String(response.password)); 
+        setSessionStartTime(response.sessionStartTime || Date.now()); // Room creation time 
         setConnectionError('');
         console.log('Room created successfully:', response.roomId);
       } else {
@@ -55,82 +66,157 @@ export default function ShareScreenComponent() {
 
   const handleStartShare = async () => {
     try {
+      console.log('🎥 Starting screen share...');
       await startScreenShare();
+      
+      // Screen sharing başladığında timer'ı başlat
+      const shareStartTime = Date.now();
+      setSharingStartTime(shareStartTime);
       setIsSharing(true);
       setError('');
+      
+      console.log('✅ Screen sharing started at:', new Date(shareStartTime).toLocaleTimeString());
+      
+      // Backend'e sharing başladığını bildir (optional)
+      if (socket && roomId) {
+        socket.emit('sharing-started', {
+          roomId,
+          startTime: shareStartTime
+        });
+      }
+      
     } catch (err) {
       setError('Failed to start screen sharing. Please check permissions.');
-      console.error(err);
+      console.error('❌ Screen sharing failed:', err);
     }
   };
 
   const handleStopShare = () => {
+    console.log('🛑 Stopping screen share...');
     stopScreenShare();
     setIsSharing(false);
+    setSharingStartTime(null); // Timer'ı reset et
+    
+    // Backend'e sharing durduğunu bildir (optional)
+    if (socket && roomId) {
+      socket.emit('sharing-stopped', {
+        roomId,
+        stopTime: Date.now()
+      });
+    }
+    
     router.push('/');
   };
 
+  // Socket event handlers
   useEffect(() => {
-    if (socket) {
-      const handleViewerJoined = ({ viewerId, roomId: joinedRoomId }) => {
-        console.log('Viewer joined:', viewerId, 'Room:', joinedRoomId);
+    if (socket) { 
+      const handleViewerJoined = ({ viewerId, roomId: joinedRoomId, joinedAt }) => {
+        console.log('🎯 Viewer joined event received:', viewerId, 'Room:', joinedRoomId);
         setViewers(prev => {
-          // Eğer viewer zaten listede yoksa ekle
+          // Viewer zaten listede mi kontrol et
           const exists = prev.some(v => v.id === viewerId);
           if (!exists) {
-            const newViewer = { id: viewerId, joinedAt: Date.now() };
-            console.log('Adding viewer to list:', newViewer);
-            return [...prev, newViewer];
+            const newViewer = { 
+              id: viewerId, 
+              joinedAt: joinedAt || Date.now() 
+            };
+            console.log('➕ Adding viewer to list:', newViewer);
+            const newViewers = [...prev, newViewer];
+            console.log('📊 New viewers array:', newViewers);
+            return newViewers;
           }
+          console.log('⚠️ Viewer already exists in list'); 
           return prev;
         });
       };
-
-      const handleViewerDisconnected = ({ viewerId }) => {
-        console.log('Viewer disconnected:', viewerId);
+ 
+      const handleViewerDisconnected = ({ viewerId, totalViewers }) => {
+        console.log('🎯 Viewer disconnected event received:', viewerId);
         setViewers(prev => {
           const filtered = prev.filter(v => v.id !== viewerId);
-          console.log('Removing viewer from list. New count:', filtered.length);
+          console.log('➖ Removing viewer from list. New count:', filtered.length);
+          console.log('📊 Updated viewers array:', filtered); 
           return filtered;
         });
       };
+ 
+      const handleParticipantUpdate = ({ type, viewerId, totalViewers }) => {
+        console.log('🎯 Participant update:', type, viewerId, 'Total:', totalViewers);
+        if (type === 'joined') {
+          handleViewerJoined({ viewerId, joinedAt: Date.now() });
+        } else if (type === 'left') {
+          handleViewerDisconnected({ viewerId, totalViewers });
+        }
+      };
 
       const handleConnect = () => {
-        console.log('Socket connected in component');
+        console.log('🔌 Socket connected in component'); 
         setConnectionError('');
       };
 
-      const handleDisconnect = () => {
-        console.log('Socket disconnected');
+      const handleDisconnect = () => { 
+        console.log('🔌 Socket disconnected'); 
         setConnectionError('Disconnected from server');
       };
 
-      const handleConnectError = (error) => {
-        console.error('Socket connection error:', error);
+      const handleConnectError = (error) => { 
+        console.error('🔌 Socket connection error:', error); 
         setConnectionError('Failed to connect to server');
       };
 
       // Event listener'ları ekle
       socket.on('viewer-joined', handleViewerJoined);
-      socket.on('viewer-disconnected', handleViewerDisconnected);
-      socket.on('viewer-left', handleViewerDisconnected); // Alternatif event adı için
+      socket.on('viewer-disconnected', handleViewerDisconnected); 
+      socket.on('viewer-left', handleViewerDisconnected);
+      socket.on('participant-update', handleParticipantUpdate); 
       socket.on('connect', handleConnect);
       socket.on('disconnect', handleDisconnect);
-      socket.on('connect_error', handleConnectError);
-
-      // Debug için mevcut viewer sayısını logla
-      console.log('Current viewers count:', viewers.length);
-
+      socket.on('connect_error', handleConnectError); 
       return () => {
         socket.off('viewer-joined', handleViewerJoined);
         socket.off('viewer-disconnected', handleViewerDisconnected);
-        socket.off('viewer-left', handleViewerDisconnected);
+        socket.off('viewer-left', handleViewerDisconnected); 
+        socket.off('participant-update', handleParticipantUpdate); 
         socket.off('connect', handleConnect);
         socket.off('disconnect', handleDisconnect);
         socket.off('connect_error', handleConnectError);
-      };
+      }; 
     }
   }, [socket]);
+
+  // Debug: viewer sayısının değişimini izle
+  useEffect(() => {
+    console.log('👥 Viewers state updated:', viewers.length, viewers);
+  }, [viewers]);
+
+  // Sharing state değişimini izle
+  useEffect(() => {
+    console.log('🎥 Sharing state changed:', {
+      isSharing,
+      sharingStartTime: sharingStartTime ? new Date(sharingStartTime).toLocaleTimeString() : null
+    });
+  }, [isSharing, sharingStartTime]);
+
+  // Debugging function - development only
+  const debugRoomStatus = async () => {
+    if (socket && roomId) {
+      socket.emit('get-room-status', roomId, (response) => {
+        console.log('🐛 Room status debug:', response);
+      });
+    }
+  };
+
+  // Calculate session time for display
+  const getSessionInfo = () => {
+    if (isSharing && sharingStartTime) {
+      const elapsed = Date.now() - sharingStartTime;
+      const minutes = Math.floor(elapsed / (1000 * 60));
+      const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return null;
+  }; 
 
   // Debug: viewer sayısının değişimini izle
   useEffect(() => {
@@ -160,13 +246,42 @@ export default function ShareScreenComponent() {
                   {connectionError}
                 </div>
               )}
+               
+              {/* Session Status */}
+              {roomId && (
+                <div className="mt-4 inline-flex items-center space-x-4 text-sm">
+                  <div className="flex items-center">
+                    <div className={`w-3 h-3 rounded-full mr-2 ${isSharing ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                    <span className="text-gray-300">
+                      {isSharing ? 'Live Session' : 'Ready to Share'}
+                    </span>
+                  </div>
+                  {isSharing && sharingStartTime && (
+                    <span className="text-blue-400">
+                      Duration: {getSessionInfo()}
+                    </span>
+                  )}
+                </div>
+              )}
               
-              {/* Debug bilgisi - sadece development için */}
+              {/* Debug panel - sadece development için */}
               {process.env.NODE_ENV === 'development' && (
-                <div className="mt-2 text-sm text-gray-500">
-                  Debug: Connected: {connected ? 'Yes' : 'No'} | 
-                  Room: {roomId || 'None'} | 
-                  Viewers: {viewers.length}
+                <div className="mt-4 bg-gray-800/50 rounded-lg p-3 text-sm text-gray-300">
+                  <div className="flex items-center justify-center space-x-4">
+                    <span>🔌 Connected: {connected ? '✅' : '❌'}</span>
+                    <span>🏠 Room: {roomId || 'None'}</span>
+                    <span>👥 Viewers: {viewers.length}</span>
+                    <span>📺 Sharing: {isSharing ? '✅' : '❌'}</span>
+                    <span>⏱️ Timer: {sharingStartTime ? '✅' : '❌'}</span>
+                    {roomId && (
+                      <button 
+                        onClick={debugRoomStatus}
+                        className="px-2 py-1 bg-blue-600 rounded text-xs"
+                      >
+                        Debug Room
+                      </button>
+                    )}
+                  </div> 
                 </div>
               )}
             </div>
@@ -187,27 +302,54 @@ export default function ShareScreenComponent() {
                   roomId={roomId}
                   password={password}
                   viewers={viewers}
-                  isSharing={isSharing}
-                  sessionStartTime={sessionStartTime}
+                  isSharing={isSharing} 
+                  sharingStartTime={sharingStartTime} // Sharing başlama zamanı 
                 />
               </div>
             </div>
 
+            {/* Live Session Bar - Sharing başladığında görünür */}
             {isSharing && (
               <div className="mt-8 bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
-                      <Wifi className="w-5 h-5 text-green-400 mr-2" />
-                      <span className="text-white">Live</span>
+                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse mr-2"></div>
+                      <span className="text-white font-medium">LIVE</span>
                     </div>
                     <div className="flex items-center">
                       <Users className="w-5 h-5 text-blue-400 mr-2" />
-                      <span className="text-white">{viewers.length} viewers</span>
+                      <span className="text-white">{viewers.length} viewers watching</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="w-5 h-5 text-green-400 mr-2" />
+                      <span className="text-white">Duration: {getSessionInfo() || '0:00'}</span>
                     </div>
                   </div>
-                  <div className="text-gray-400 text-sm">
-                    Session active since {sessionStartTime ? new Date(sessionStartTime).toLocaleTimeString() : '--:--'}
+                  <div className="text-gray-400 text-sm"> 
+                    Started at {sharingStartTime ? new Date(sharingStartTime).toLocaleTimeString() : '--:--'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Room Ready State - Room var ama sharing başlamamış */}
+            {roomId && !isSharing && (
+              <div className="mt-8 bg-yellow-600/20 backdrop-blur-lg rounded-xl p-4 border border-yellow-400/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
+                      <span className="text-white font-medium">Room Ready</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Users className="w-5 h-5 text-blue-400 mr-2" />
+                      <span className="text-white">{viewers.length} waiting</span>
+                    </div>
+                  </div>
+                  <div className="text-yellow-200 text-sm flex items-center">
+                    <Play className="w-4 h-4 mr-1" />
+                    Click "Start Sharing" to begin 
                   </div>
                 </div>
               </div>

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Copy, CheckCircle, Users, Lock, Clock, Share2 } from 'lucide-react';
-
-export default function ConnectionPanel({ roomId, password, viewers, isSharing, sessionStartTime }) {
+ 
+export default function ConnectionPanel({ roomId, password, viewers, isSharing, sharingStartTime }) {
   const [copiedField, setCopiedField] = useState('');
-  const [timeRemaining, setTimeRemaining] = useState('60:00');
+  const [timeRemaining, setTimeRemaining] = useState('--:--');
+  const [sessionDuration, setSessionDuration] = useState('--:--'); 
 
   const copyToClipboard = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -15,31 +16,59 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
     const url = `${window.location.origin}/view?room=${roomId}&pwd=${password}`;
     copyToClipboard(url, 'link');
   };
-
-  // Gerçek zamanlı süre hesaplama
+ 
+  // Gerçek zamanlı süre hesaplama - SADECE sharing başladığında
   useEffect(() => {
-    if (!sessionStartTime) return;
+    if (!isSharing || !sharingStartTime) {
+      setTimeRemaining('--:--');
+      setSessionDuration('--:--');
+      return;
+    }
 
-    const updateTimeRemaining = () => {
+    const updateTimer = () => {
       const now = Date.now();
-      const elapsed = now - sessionStartTime;
+      const elapsed = now - sharingStartTime;
       const sessionDuration = 60 * 60 * 1000; // 1 saat
       const remaining = Math.max(0, sessionDuration - elapsed);
       
-      const minutes = Math.floor(remaining / (1000 * 60));
-      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+      // Remaining time hesaplama
+      const remainingMinutes = Math.floor(remaining / (1000 * 60));
+      const remainingSeconds = Math.floor((remaining % (1000 * 60)) / 1000);
+      setTimeRemaining(`${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`);
       
-      setTimeRemaining(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      // Session duration hesaplama
+      const elapsedMinutes = Math.floor(elapsed / (1000 * 60));
+      const elapsedSecondsInMinute = Math.floor((elapsed % (1000 * 60)) / 1000);
+      setSessionDuration(`${elapsedMinutes}:${elapsedSecondsInMinute.toString().padStart(2, '0')}`);
+      
+      // Session bitti mi kontrol et
+      if (remaining <= 0) {
+        setTimeRemaining('00:00');
+        // Optional: Session bittiğinde bir event emit edebiliriz
+      }
     };
 
     // İlk hesaplama
-    updateTimeRemaining();
+    updateTimer();
     
     // Her saniye güncelle
-    const interval = setInterval(updateTimeRemaining, 1000);
+    const interval = setInterval(updateTimer, 1000);
     
     return () => clearInterval(interval);
-  }, [sessionStartTime]);
+  }, [isSharing, sharingStartTime]);
+
+  const getTimerColor = () => {
+    if (!isSharing) return 'text-gray-400';
+    
+    const timeString = timeRemaining;
+    if (timeString === '--:--') return 'text-gray-400';
+    
+    const [minutes] = timeString.split(':').map(Number);
+    
+    if (minutes > 10) return 'text-green-400';
+    if (minutes > 5) return 'text-yellow-400';
+    return 'text-red-400';
+  }; 
 
   return (
     <div className="space-y-6">
@@ -127,14 +156,40 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
             </span>
           </div>
           
+          {/* Session Duration - Sharing başladığından bu yana geçen süre */}
+          {isSharing && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Clock className="w-5 h-5 text-blue-400 mr-2" />
+                <span className="text-gray-300">Session Duration</span>
+              </div>
+              <span className="text-white font-medium">{sessionDuration}</span>
+            </div>
+          )}
+          
+          {/* Time Remaining - Sadece sharing başladığında görünür */}
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Clock className="w-5 h-5 text-yellow-400 mr-2" />
-              <span className="text-gray-300">Time Remaining</span>
-            </div>
-            <span className="text-white font-medium">{timeRemaining}</span>
+              <span className="text-gray-300">
+                {isSharing ? 'Time Remaining' : 'Session Time'}
+              </span>
+            </div> 
+            <span className={`font-medium ${getTimerColor()}`}>
+              {isSharing ? timeRemaining : '60:00'}
+            </span> 
           </div>
         </div>
+
+        {/* Session Status */}
+        {!isSharing && roomId && (
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <div className="flex items-center text-sm text-gray-400">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
+              <span>Waiting for screen sharing to start...</span>
+            </div>
+          </div>
+        )}
 
         {/* Viewer List */}
         {Array.isArray(viewers) && viewers.length > 0 && (
@@ -160,11 +215,20 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
       </div>
 
       {/* Instructions */}
+      {!isSharing && roomId && (
+        <div className="bg-yellow-600/20 backdrop-blur-lg rounded-xl p-4 border border-yellow-400/30">
+          <p className="text-sm text-yellow-200">
+            <strong>Ready to share!</strong> Click "Start Sharing" to begin your screen sharing session. 
+            The 1-hour timer will start when you begin sharing.
+          </p>
+        </div>
+      )}
+
       {isSharing && (
         <div className="bg-blue-600/20 backdrop-blur-lg rounded-xl p-4 border border-blue-400/30">
           <p className="text-sm text-blue-200">
-            Share the Room ID and Password with people you want to give access to your screen.
-            The session will expire after 1 hour of inactivity.
+            <strong>Live Session Active!</strong> Share the Room ID and Password with people you want to give access to your screen.
+            The session will expire after 1 hour of sharing.
           </p>
         </div>
       )}
