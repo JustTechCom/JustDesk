@@ -193,7 +193,7 @@ export default function Home() {
         <footer className="bg-black/50 backdrop-blur-md border-t border-white/10 mt-24">
           <div className="container mx-auto px-4 py-8">
             <div className="text-center text-gray-400">
-              <p>© 2024 JustDesk. All rights reserved.</p>
+              <p>© 2024 JustDesk – Released under the MIT License</p>
               <p className="mt-2">
                 Web-based remote desktop solution. No downloads required.
               </p>
