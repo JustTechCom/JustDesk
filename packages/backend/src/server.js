@@ -243,7 +243,6 @@ app.get('/api/health', healthLimiter, async (req, res) => {
   }
 });
 
-
 // Room info endpoint with strict rate limiting
 app.get('/api/room/:roomId', strictLimiter, async (req, res) => {
   const { roomId } = req.params;
@@ -267,8 +266,9 @@ app.get('/api/room/:roomId', strictLimiter, async (req, res) => {
       created: room.created,
       participantCount: room.participants.length,
       active: true,
-      sessionStartTime: room.sessionStartTime
-
+      sessionStartTime: room.sessionStartTime,
+      sharingStartTime: room.sharingStartTime,
+      isSharing: room.isSharing || false
     });
   } catch (error) {
     console.error('Room info error:', error);
@@ -312,14 +312,14 @@ io.use((socket, next) => {
   next();
 });
 
-// Socket.IO connection handling - UPDATED VERSION
-
+// Socket.IO connection handling - COMPLETE VERSION
 io.on('connection', (socket) => {
   console.log(`✅ New socket connection: ${socket.id}`);
 
   // Test Redis connection on each socket connection
   socket.emit('server-status', { connected: true });
 
+  // CREATE ROOM EVENT
   socket.on('create-room', async (callback) => {
     console.log(`🏠 Creating room for socket: ${socket.id}`);
     
@@ -343,7 +343,9 @@ io.on('connection', (socket) => {
         created: now,
         sessionStartTime: now,
         participants: [], // Boş array ile başla
-        lastActivity: now
+        lastActivity: now,
+        isSharing: false,
+        sharingStartTime: null
       };
 
       // Store in Redis with expiration
@@ -360,7 +362,6 @@ io.on('connection', (socket) => {
         connectedAt: now,
         sessionStartTime: now
       });
-
 
       console.log(`✅ Room created successfully: ${roomId}`);
       
@@ -397,6 +398,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // JOIN ROOM EVENT
   socket.on('join-room', async ({ roomId, password }, callback) => {
     console.log(`🚪 Joining room ${roomId} for socket: ${socket.id}`);
     
@@ -437,7 +439,6 @@ io.on('connection', (socket) => {
         role: 'viewer', 
         connectedAt: Date.now() 
       });
-
       
       // Add to participants if not already there
       if (!room.participants.includes(socket.id)) {
@@ -462,7 +463,6 @@ io.on('connection', (socket) => {
         type: 'joined',
         viewerId: socket.id,
         totalViewers: room.participants.length
-
       });
 
       console.log(`✅ Viewer ${socket.id} joined room ${roomId}. Total viewers: ${room.participants.length}`);
@@ -471,6 +471,69 @@ io.on('connection', (socket) => {
     } catch (error) {
       console.error('❌ Error joining room:', error);
       callback({ success: false, error: 'Failed to join room: ' + error.message });
+    }
+  });
+
+  // SHARING STARTED EVENT
+  socket.on('sharing-started', async ({ roomId, startTime }) => {
+    console.log(`🎥 Screen sharing started in room ${roomId} at ${new Date(startTime).toLocaleTimeString()}`);
+    
+    try {
+      const roomData = await redis.get(`room:${roomId}`);
+      if (roomData) {
+        const room = JSON.parse(roomData);
+        
+        // Room data'ya sharing start time ekle
+        room.sharingStartTime = startTime;
+        room.isSharing = true;
+        room.lastActivity = Date.now();
+        
+        await redis.setex(`room:${roomId}`, 3600, JSON.stringify(room));
+        
+        // Tüm viewer'lara sharing başladığını bildir
+        socket.to(roomId).emit('host-started-sharing', {
+          startTime,
+          message: 'Host started sharing their screen'
+        });
+        
+        console.log(`✅ Updated room ${roomId} with sharing start time`);
+      }
+    } catch (error) {
+      console.error('❌ Error updating sharing start time:', error);
+    }
+  });
+
+  // SHARING STOPPED EVENT
+  socket.on('sharing-stopped', async ({ roomId, stopTime }) => {
+    console.log(`🛑 Screen sharing stopped in room ${roomId} at ${new Date(stopTime).toLocaleTimeString()}`);
+    
+    try {
+      const roomData = await redis.get(`room:${roomId}`);
+      if (roomData) {
+        const room = JSON.parse(roomData);
+        
+        // Calculate session duration
+        const sessionDuration = room.sharingStartTime ? stopTime - room.sharingStartTime : 0;
+        
+        // Room data'yı güncelle
+        room.sharingStopTime = stopTime;
+        room.isSharing = false;
+        room.sessionDuration = sessionDuration;
+        room.lastActivity = Date.now();
+        
+        await redis.setex(`room:${roomId}`, 3600, JSON.stringify(room));
+        
+        // Tüm viewer'lara sharing durduğunu bildir
+        socket.to(roomId).emit('host-stopped-sharing', {
+          stopTime,
+          sessionDuration,
+          message: 'Host stopped sharing their screen'
+        });
+        
+        console.log(`✅ Session duration: ${Math.floor(sessionDuration / 1000 / 60)}:${Math.floor((sessionDuration / 1000) % 60)} minutes`);
+      }
+    } catch (error) {
+      console.error('❌ Error updating sharing stop time:', error);
     }
   });
 
@@ -495,7 +558,7 @@ io.on('connection', (socket) => {
     socket.to(to).emit('ice-candidate', { candidate, from: socket.id });
   });
 
-  // Debug endpoint to check room status
+  // DEBUG: Get room status
   socket.on('get-room-status', async (roomId, callback) => {
     try {
       const roomData = await redis.get(`room:${roomId}`);
@@ -509,7 +572,9 @@ io.on('connection', (socket) => {
             participants: room.participants,
             created: room.created,
             sessionStartTime: room.sessionStartTime,
-            lastActivity: room.lastActivity
+            lastActivity: room.lastActivity,
+            isSharing: room.isSharing || false,
+            sharingStartTime: room.sharingStartTime
           }
         });
       } else {
@@ -520,7 +585,46 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle disconnection - UPDATED
+  // DEBUG: Get sharing stats
+  socket.on('get-sharing-stats', async (roomId, callback) => {
+    try {
+      const roomData = await redis.get(`room:${roomId}`);
+      if (roomData) {
+        const room = JSON.parse(roomData);
+        
+        const stats = {
+          roomId: room.roomId,
+          isSharing: room.isSharing || false,
+          sharingStartTime: room.sharingStartTime,
+          sharingStopTime: room.sharingStopTime,
+          sessionDuration: room.sessionDuration,
+          participantCount: room.participants.length,
+          created: room.created,
+          lastActivity: room.lastActivity
+        };
+        
+        // Eğer şu anda sharing aktifse, current duration'ı hesapla
+        if (room.isSharing && room.sharingStartTime) {
+          stats.currentDuration = Date.now() - room.sharingStartTime;
+        }
+        
+        callback({ success: true, stats });
+      } else {
+        callback({ success: false, error: 'Room not found' });
+      }
+    } catch (error) {
+      callback({ success: false, error: error.message });
+    }
+  });
+
+  // PING endpoint for connection health
+  socket.on('ping', (callback) => {
+    if (callback && typeof callback === 'function') {
+      callback({ pong: true, timestamp: Date.now() });
+    }
+  });
+
+  // DISCONNECT EVENT
   socket.on('disconnect', async () => {
     console.log(`👋 Socket disconnected: ${socket.id}`);
     
@@ -599,13 +703,6 @@ io.on('connection', (socket) => {
     
     connections.delete(socket.id);
   });
-
-  // Ping endpoint for connection health
-  socket.on('ping', (callback) => {
-    if (callback && typeof callback === 'function') {
-      callback({ pong: true, timestamp: Date.now() });
-    }
-  });
 });
 
 // Error handling middleware
@@ -621,7 +718,6 @@ app.use((err, req, res, next) => {
     timestamp: new Date().toISOString()
   });
 });
-
 
 // 404 handler
 app.use((req, res) => {
@@ -661,6 +757,56 @@ setInterval(async () => {
   }
 }, 10 * 60 * 1000); // Run every 10 minutes
 
+// Session timeout checker - her 30 saniyede bir çalışır
+setInterval(async () => {
+  console.log('🕐 Checking for session timeouts...');
+  
+  try {
+    // Tüm room'ları kontrol et
+    const keys = await redis.keys('room:*');
+    let timeoutCount = 0;
+    
+    for (const key of keys) {
+      const roomData = await redis.get(key);
+      if (roomData) {
+        const room = JSON.parse(roomData);
+        const now = Date.now();
+        
+        // Eğer sharing aktifse ve 1 saatten fazla olmuşsa
+        if (room.isSharing && room.sharingStartTime) {
+          const sharingDuration = now - room.sharingStartTime;
+          const oneHour = 60 * 60 * 1000;
+          
+          if (sharingDuration > oneHour) {
+            console.log(`⏰ Session timeout for room ${room.roomId}`);
+            
+            // Host'a timeout bildirimi gönder
+            io.to(room.hostId).emit('session-timeout', {
+              message: 'Your sharing session has expired after 1 hour',
+              duration: sharingDuration
+            });
+            
+            // Viewer'lara da bildir
+            io.to(room.roomId).emit('session-ended', {
+              reason: 'timeout',
+              message: 'The sharing session has ended due to timeout'
+            });
+            
+            // Room'u sil
+            await redis.del(key);
+            timeoutCount++;
+          }
+        }
+      }
+    }
+    
+    if (timeoutCount > 0) {
+      console.log(`⏰ Cleaned up ${timeoutCount} expired sessions`);
+    }
+  } catch (error) {
+    console.error('❌ Error in session timeout checker:', error);
+  }
+}, 30 * 1000); // Her 30 saniyede bir çalıştır
 
 // Start server
 const PORT = process.env.PORT || 3001;
@@ -671,7 +817,8 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🛡️ Security middleware enabled`);
   console.log(`📊 Active connections tracking: enabled`);
   console.log(`🧹 Automatic cleanup: enabled`);
-
+  console.log(`⏰ Session timeout checking: enabled (1 hour limit)`);
+  console.log(`🎥 Sharing event tracking: enabled`);
 });
 
 // Graceful shutdown
