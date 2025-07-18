@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Copy, CheckCircle, Users, Lock, Clock, Share2 } from 'lucide-react';
 
-export default function ConnectionPanel({ roomId, password, viewers, isSharing }) {
+export default function ConnectionPanel({ roomId, password, viewers, isSharing, sessionStartTime }) {
   const [copiedField, setCopiedField] = useState('');
+  const [timeRemaining, setTimeRemaining] = useState('60:00');
 
   const copyToClipboard = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -14,6 +15,31 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing }
     const url = `${window.location.origin}/view?room=${roomId}&pwd=${password}`;
     copyToClipboard(url, 'link');
   };
+
+  // Gerçek zamanlı süre hesaplama
+  useEffect(() => {
+    if (!sessionStartTime) return;
+
+    const updateTimeRemaining = () => {
+      const now = Date.now();
+      const elapsed = now - sessionStartTime;
+      const sessionDuration = 60 * 60 * 1000; // 1 saat
+      const remaining = Math.max(0, sessionDuration - elapsed);
+      
+      const minutes = Math.floor(remaining / (1000 * 60));
+      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+      
+      setTimeRemaining(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    // İlk hesaplama
+    updateTimeRemaining();
+    
+    // Her saniye güncelle
+    const interval = setInterval(updateTimeRemaining, 1000);
+    
+    return () => clearInterval(interval);
+  }, [sessionStartTime]);
 
   return (
     <div className="space-y-6">
@@ -96,7 +122,9 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing }
               <Users className="w-5 h-5 text-blue-400 mr-2" />
               <span className="text-gray-300">Viewers</span>
             </div>
-            <span className="text-white font-medium">{viewers.length}</span>
+            <span className="text-white font-medium">
+              {Array.isArray(viewers) ? viewers.length : 0}
+            </span>
           </div>
           
           <div className="flex items-center justify-between">
@@ -104,19 +132,26 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing }
               <Clock className="w-5 h-5 text-yellow-400 mr-2" />
               <span className="text-gray-300">Time Remaining</span>
             </div>
-            <span className="text-white font-medium">59:45</span>
+            <span className="text-white font-medium">{timeRemaining}</span>
           </div>
         </div>
 
         {/* Viewer List */}
-        {viewers.length > 0 && (
+        {Array.isArray(viewers) && viewers.length > 0 && (
           <div className="mt-4 pt-4 border-t border-white/10">
             <p className="text-sm text-gray-400 mb-2">Connected Viewers:</p>
             <div className="space-y-1">
-              {viewers.map((viewer) => (
-                <div key={viewer.id} className="flex items-center text-sm">
+              {viewers.map((viewer, index) => (
+                <div key={viewer.id || index} className="flex items-center text-sm">
                   <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                  <span className="text-gray-300">Viewer {viewer.id.substring(0, 8)}</span>
+                  <span className="text-gray-300">
+                    Viewer {viewer.id ? viewer.id.substring(0, 8) : `#${index + 1}`}
+                  </span>
+                  {viewer.joinedAt && (
+                    <span className="text-gray-500 ml-2 text-xs">
+                      {new Date(viewer.joinedAt).toLocaleTimeString()}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
