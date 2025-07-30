@@ -1,27 +1,31 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>JustDesk Dokümantasyonu</title>
+  <title>📚 JustDesk Documentation</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
         Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-      max-width: 700px;
+      max-width: 750px;
       margin: 40px auto;
       padding: 0 20px;
-      line-height: 1.6;
+      line-height: 1.7;
       color: #222;
-      background: #f9f9f9;
+      background: #fefefe;
     }
     h1 {
-      color: #0366d6;
-      border-bottom: 2px solid #0366d6;
+      font-size: 2em;
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
       padding-bottom: 0.3em;
     }
-    ul {
-      list-style-type: none;
+    h2 {
+      color: #34495e;
+      margin-top: 40px;
+    }
+    ul, table {
       padding-left: 0;
     }
     li {
@@ -29,36 +33,97 @@
     }
     a {
       text-decoration: none;
-      color: #0366d6;
+      color: #3498db;
       font-weight: 600;
     }
     a:hover {
       text-decoration: underline;
     }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f5f5f5;
+    }
     footer {
-      margin-top: 40px;
+      margin-top: 50px;
       font-size: 0.9em;
       color: #666;
       border-top: 1px solid #ddd;
-      padding-top: 15px;
+      padding-top: 20px;
       text-align: center;
+    }
+    .tip {
+      background: #e8f4fc;
+      border-left: 4px solid #3498db;
+      padding: 10px 15px;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>JustDesk Dokümantasyonu</h1>
-  <p>JustDesk uzak masaüstü çözümü için dökümantasyon sayfasına hoş geldiniz.</p>
 
-  <h2>Belgeler</h2>
+  <h1>📚 JustDesk Documentation</h1>
+  <p><strong>JustDesk</strong> is an open-source solution designed to make remote desktop connections easy and secure.<br>
+  This documentation provides everything you need to set up, run, and troubleshoot the project.</p>
+
+  <h2>📌 Table of Contents</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="API.md">API.md</a></td>
+        <td>Detailed explanation of the application's API endpoints.</td>
+      </tr>
+      <tr>
+        <td><a href="ARCHITECTURE.md">ARCHITECTURE.md</a></td>
+        <td>Overview of JustDesk's system architecture and components.</td>
+      </tr>
+      <tr>
+        <td><a href="DEPLOYMENT.md">DEPLOYMENT.md</a></td>
+        <td>Steps for server deployment and installation.</td>
+      </tr>
+      <tr>
+        <td><a href="TROUBLESHOOTING.md">TROUBLESHOOTING.md</a></td>
+        <td>Solutions for common errors and issues.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>🛠 About the Project</h2>
+  <p><strong>JustDesk</strong> includes the following core features:</p>
   <ul>
-    <li><a href="API.md">API.md</a> — API uç noktaları dökümü</li>
-    <li><a href="ARCHITECTURE.md">ARCHITECTURE.md</a> — Sistem mimarisi</li>
-    <li><a href="DEPLOYMENT.md">DEPLOYMENT.md</a> — Kurulum ve dağıtım adımları</li>
-    <li><a href="TROUBLESHOOTING.md">TROUBLESHOOTING.md</a> — Hata ve sorun giderme rehberi</li>
+    <li>🖥 Start remote desktop sessions</li>
+    <li>🔐 Secure connections (with encryption support)</li>
+    <li>🌐 Web-based user interface</li>
+    <li>📊 Session management and logging</li>
   </ul>
 
+  <h2>📞 Support</h2>
+  <p>If you're a developer or interested in contributing, feel free to reach out:</p>
+  <ul>
+    <li>📧 Email: <a href="mailto:iletisim@justtech.work">iletisim@justtech.work</a></li>
+    <li>📦 <a href="https://github.com/JustTechCom/JustDesk/issues">GitHub Issues</a></li>
+  </ul>
+
+  <div class="tip">
+    🧠 <strong>Tip:</strong> You can always return to this homepage by clicking the GitHub Pages logo in the top-left corner.
+  </div>
+
   <footer>
-    © 2025 JustTechCom
+    &copy; 2025 JustTechCom
   </footer>
 </body>
 </html>
