@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JustDesk Deployment Guide & API Documentation</title>
+  <style>
+    /* Genel stil */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 0 1rem 3rem;
+      color: #333;
+      line-height: 1.6;
+    }
+    h1, h2, h3, h4 {
+      color: #004085;
+      margin-top: 2rem;
+    }
+    h1 {
+      border-bottom: 3px solid #004085;
+      padding-bottom: 0.3rem;
+    }
+    code {
+      background-color: #eaeaea;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-family: Consolas, Monaco, 'Courier New', monospace;
+      font-size: 0.95em;
+    }
+    pre {
+      background-color: #272822;
+      color: #f8f8f2;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.9em;
+      line-height: 1.4;
+      margin: 1rem 0;
+    }
+    a {
+      color: #004085;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    ul, ol {
+      margin-left: 1.2rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1rem 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.5rem 0.8rem;
+      text-align: left;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    /* Bölümler için kutu ve gölge */
+    section {
+      background: white;
+      padding: 1.5rem 2rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 6px rgb(0 0 0 / 0.1);
+      margin-top: 2rem;
+    }
+    /* Komut satırı stilleri */
+    .bash-command {
+      background-color: #f4f4f4;
+      border-left: 4px solid #28a745;
+      padding: 0.5rem 1rem;
+      font-family: Consolas, Monaco, 'Courier New', monospace;
+      margin: 0.7rem 0 1rem;
+      white-space: pre-wrap;
+    }
+    /* Kod blokları içinde js snippet */
+    .code-js {
+      background-color: #272822;
+      color: #66d9ef;
+      font-family: Consolas, Monaco, 'Courier New', monospace;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 1rem 0;
+      font-size: 0.9em;
+    }
+    /* Uyarı ve notlar */
+    .note {
+      background: #e2f0d9;
+      border-left: 4px solid #28a745;
+      padding: 0.8rem 1rem;
+      margin: 1rem 0;
+      color: #2f6627;
+      border-radius: 4px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>JustDesk Deployment Guide</h1>
+
+  <section>
+    <h2>Prerequisites</h2>
+    <ul>
+      <li>Ubuntu 20.04+ veya benzeri Linux dağıtımı</li>
+      <li>Docker ve Docker Compose kurulumu</li>
+      <li>Domain adı ve DNS yapılandırması</li>
+      <li>SSL sertifikası (Let's Encrypt önerilir)</li>
+      <li>Minimum 2GB RAM, 2 CPU çekirdeği</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Quick Deployment</h2>
+
+    <h3>1. Clone Repository</h3>
+    <pre class="bash-command">
+git clone https://github.com/kadirertancam/JustDesk.git
+cd JustDesk
+    </pre>
+
+    <h3>2. Configure Environment</h3>
+    <pre class="bash-command">
+cp .env.example .env
+nano .env
+    </pre>
+    <p>Değiştirilecek önemli değişkenler:</p>
+    <ul>
+      <li><code>DOMAIN</code>: Domain adınız</li>
+      <li><code>REDIS_PASSWORD</code>: Redis için güçlü parola</li>
+      <li><code>TURN_SECRET</code>: TURN sunucu için gizli anahtar</li>
+      <li><code>SSL_EMAIL</code>: Let's Encrypt için e-posta adresi</li>
+    </ul>
+
+    <h3>3. Run Setup Script</h3>
+    <pre class="bash-command">
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+    </pre>
+    <p>Bu script:</p>
+    <ul>
+      <li>Gerekli bağımlılıkları kurar</li>
+      <li>SSL sertifikalarını yapılandırır</li>
+      <li>Docker container’larını kurar ve başlatır</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Manual Deployment</h2>
+
+    <h3>1. Install Dependencies</h3>
+    <pre class="bash-command">
+sudo apt update
+sudo apt install -y docker.io docker-compose nginx certbot python3-certbot-nginx
+    </pre>
+
+    <h3>2. Configure SSL</h3>
+    <pre class="bash-command">
+sudo certbot certonly --standalone -d yourdomain.com -d www.yourdomain.com
+    </pre>
+
+    <h3>3. Build and Start Services</h3>
+    <pre class="bash-command">
+docker-compose build
+docker-compose up -d
+    </pre>
+
+    <h3>4. Configure Nginx</h3>
+    <pre class="bash-command">
+sudo cp nginx/conf.d/default.conf /etc/nginx/sites-available/justdesk
+sudo ln -s /etc/nginx/sites-available/justdesk /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+    </pre>
+  </section>
+
+  <section>
+    <h2>Production Considerations</h2>
+
+    <h3>Security</h3>
+    <ul>
+      <li>Firewall (UFW) etkinleştirin</li>
+      <li>Fail2ban yapılandırması</li>
+      <li>Düzenli güvenlik güncellemeleri</li>
+      <li>Logları sürekli izleyin</li>
+    </ul>
+
+    <h3>Performance</h3>
+    <ul>
+      <li>Gzip sıkıştırmayı etkinleştirin</li>
+      <li>CDN kullanımı</li>
+      <li>Docker image optimizasyonu</li>
+      <li>Kaynak kullanımı takibi</li>
+    </ul>
+
+    <h3>Backup</h3>
+    <ul>
+      <li>Otomatik Redis yedeklemeleri</li>
+      <li>SSL sertifikası yedekleri</li>
+      <li>Konfigürasyon yedekleri</li>
+      <li>Restore işlemlerini test edin</li>
+    </ul>
+
+    <h3>Monitoring</h3>
+    <ul>
+      <li>Health check kurulumu</li>
+      <li>Alert (uyarı) sistemleri</li>
+      <li>Log toplama (aggregation)</li>
+      <li>Performans metrikleri</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Environment Variables</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Variable</th>
+          <th>Description</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>NODE_ENV</td>
+          <td>Çalışma modu</td>
+          <td>production</td>
+        </tr>
+        <tr>
+          <td>DOMAIN</td>
+          <td>Domain adı</td>
+          <td>justdesk.io</td>
+        </tr>
+        <tr>
+          <td>REDIS_PASSWORD</td>
+          <td>Redis şifresi</td>
+          <td>strong-password</td>
+        </tr>
+        <tr>
+          <td>TURN_SECRET</td>
+          <td>TURN sunucu gizli anahtarı</td>
+          <td>random-secret</td>
+        </tr>
+        <tr>
+          <td>SSL_EMAIL</td>
+          <td>SSL için e-posta</td>
+          <td>admin@justdesk.io</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Troubleshooting</h2>
+
+    <h3>Connection Issues</h3>
+    <ul>
+      <li>Firewall ayarlarını kontrol edin</li>
+      <li>TURN sunucu yapılandırmasını doğrulayın</li>
+      <li>WebSocket bağlantısını kontrol edin</li>
+      <li>Nginx loglarını inceleyin</li>
+    </ul>
+
+    <h3>Performance Issues</h3>
+    <ul>
+      <li>CPU ve hafıza kullanımını izleyin</li>
+      <li>Redis performansını kontrol edin</li>
+      <li>WebRTC istatistiklerini gözden geçirin</li>
+      <li>Video kalite ayarlarını optimize edin</li>
+    </ul>
+
+    <h3>SSL Issues</h3>
+    <ul>
+      <li>Sertifika kurulumunu doğrulayın</li>
+      <li>Sertifika süresini kontrol edin</li>
+      <li>Otomatik yenilemeyi test edin</li>
+      <li>Nginx SSL yapılandırmasını inceleyin</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Scaling</h2>
+
+    <h3>Single Server</h3>
+    <ul>
+      <li>100 eş zamanlı kullanıcıya kadar uygundur</li>
+      <li>4GB RAM, 4 CPU çekirdeği önerilir</li>
+      <li>Performans için SSD depolama kullanın</li>
+    </ul>
+
+    <h3>Multi-Server Setup</h3>
+    <ul>
+      <li>Load balancer (HAProxy veya Nginx)</li>
+      <li>Birden çok backend sunucu</li>
+      <li>Redis kümesi (cluster)</li>
+      <li>Dağıtık TURN sunucuları</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Cloud Deployment</h2>
+
+    <h3>AWS</h3>
+    <pre class="bash-command">
+# Use provided CloudFormation template
+aws cloudformation create-stack \
+  --stack-name justdesk \
+  --template-body file://aws-cf-template.yaml
+    </pre>
+
+    <h3>Docker Swarm</h3>
+    <pre class="bash-command">
+docker swarm init
+docker stack deploy -c docker-compose.yml justdesk
+    </pre>
+
+    <h3>Kubernetes</h3>
+    <pre class="bash-command">
+kubectl apply -f k8s/
+    </pre>
+  </section>
+
+  <section>
+    <h2>Maintenance</h2>
+
+    <h3>Updates</h3>
+    <pre class="bash-command">
+cd /opt/justdesk
+git pull
+docker-compose down
+docker-compose up -d --build
+    </pre>
+
+    <h3>Logs</h3>
+    <pre class="bash-command">
+# View all logs
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f backend
+    </pre>
+
+    <h3>Backup</h3>
+    <pre class="bash-command">
+./scripts/backup.sh
+    </pre>
+
+    <h3>SSL Renewal</h3>
+    <pre class="bash-command">
+certbot renew
+docker-compose restart nginx
+    </pre>
+  </section>
+
+  <hr />
+
+  <h1>JustDesk API Documentation</h1>
+
+  <section>
+    <h2>Overview</h2>
+    <p>JustDesk, gerçek zamanlı iletişim için WebSocket bağlantıları kullanır. Bu doküman, mevcut event’ler ve veri formatlarını açıklar.</p>
+  </section>
+
+  <section>
+    <h2>WebSocket Connection</h2>
+
+    <h3>Connection URL</h3>
+    <p><code>wss://justdesk.io/socket.io/</code></p>
+
+    <h3>Connection Example</h3>
+    <pre class="code-js">
+const socket = io('wss://justdesk.io', {
+  transports: ['websocket']
+});
+    </pre>
+  </section>
+
+  <section>
+    <h2>Events</h2>
+
+    <h3>Client → Server Events</h3>
+
+    <h4>create-room</h4>
+    <p>Yeni ekran paylaşım odası oluşturur.</p>
+    <pre class="code-js">
+socket.emit('create-room', (response) =&gt; {
+  console.log(response);
+  // { success: true, roomId: '123456789', password: 'ABC123' }
+});
+    </pre>
+
+    <h4>join-room</h4>
+    <p>Var olan odaya izleyici olarak katılır.</p>
+    <pre class="code-js">
+socket.emit('join-room', {
+  roomId: '123456789',
+  password: 'ABC123'
+}, (response) =&gt; {
+  console.log(response);
+  // { success: true, hostId: 'socket-id' }
+});
+    </pre>
+
+    <h4>offer</h4>
+    <p>WebRTC bağlantısı için offer (teklif) gönderir.</p>
+    <pre class="code-js">
+socket.emit('offer', {
+  offer: { type: 'offer', sdp: '...' },
+  to: 'target-socket-id'
+});
+    </pre>
+
+    <h4>answer</h4>
+    <p>Offer'a cevap olarak WebRTC answer (cevap) gönderir.</p>
+    <pre class="code-js">
+socket.emit('answer', {
+  answer: { type: 'answer', sdp: '...' },
+  to: 'target-socket-id'
+});
+    </pre>
+
+    <h4>ice-candidate</h4>
+    <p>Bağlantı kurulumu için ICE candidate bilgilerini paylaşır.</p>
+    <pre class="code-js">
+socket.emit('ice-candidate', {
+  candidate: {
+    candidate: '...',
+    sdpMLineIndex: 0,
+    sdpMid: '0'
+  },
+  to: 'target-socket-id'
+});
+    </pre>
+  </section>
+
+  <section>
+    <h3>Server → Client Events</h3>
+
+    <h4>viewer-joined</h4>
+    <p>Bir izleyici odaya katıldığında host’a bildirim gönderir.</p>
+    <pre class="code-js">
+socket.on('viewer-joined', ({ viewerId, roomId }) =&gt; {
+  console.log(`Viewer ${viewerId} joined room ${roomId}`);
+});
+    </pre>
+
+    <h4>viewer-left</h4>
+    <p>Bir izleyici odadan ayrıldığında host’a bildirim gönderir.</p>
+    <pre class="code-js">
+socket.on('viewer-left', ({ viewerId }) =&gt; {
+  console.log(`Viewer ${viewerId} left`);
+});
+    </pre>
+
+    <h4>host-disconnected</h4>
+    <p>Host bağlantısı kesildiğinde izleyicilere bildirim gönderir.</p>
+    <pre class="code-js">
+socket.on('host-disconnected', () =&gt; {
+  console.log('Host has disconnected');
+});
+    </pre>
+
+    <h4>offer</h4>
+    <p>Peer’den WebRTC offer alır.</p>
+    <pre class="code-js">
+socket.on('offer', ({ offer, from }) =&gt; {
+  // Handle incoming offer
+});
+    </pre>
+
+    <h4>answer</h4>
+    <p>Peer’den WebRTC answer alır.</p>
+    <pre class="code-js">
+socket.on('answer', ({ answer, from }) =&gt; {
+  // Handle incoming answer
+});
+    </pre>
+
+    <h4>ice-candidate</h4>
+    <p>Peer’den ICE candidate alır.</p>
+    <pre class="code-js">
+socket.on('ice-candidate', ({ candidate, from }) =&gt; {
+  // Handle incoming ICE candidate
+});
+    </pre>
+  </section>
+
+  <section>
+    <h2>REST API Endpoints</h2>
+
+    <h3>Health Check</h3>
+    <p><strong>GET</strong> <code>/api/health</code></p>
+    <p>Yanıt:</p>
+    <pre>
+{
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "uptime": 12345
+}
+    </pre>
+
+    <h3>Room Info (Debug Only)</h3>
+    <p><strong>GET</strong> <code>/api/room/:roomId</code></p>
+    <p>Yanıt:</p>
+    <pre>
+{
+  "roomId": "123456789",
+  "created": 1704067200000,
+  "participantCount": 2
+}
+    </pre>
+  </section>
+
+  <section>
+    <h2>Error Codes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Description</th>
+        </tr
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ROOM_NOT_FOUND</td>
+          <td>Belirtilen oda mevcut değil</td>
+        </tr>
+        <tr>
+          <td>INVALID_PASSWORD</td>
+          <td>Yanlış oda şifresi</td>
+        </tr>
+        <tr>
+          <td>ROOM_FULL</td>
+          <td>Oda maksimum kapasiteye ulaştı</td>
+        </tr>
+        <tr>
+          <td>CONNECTION_FAILED</td>
+          <td>WebRTC bağlantısı başarısız oldu</td>
+        </tr>
+        <tr>
+          <td>RATE_LIMIT_EXCEEDED</td>
+          <td>Çok fazla istek gönderildi</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Rate Limits</h2>
+    <ul>
+      <li>Oda oluşturma: 5 oda / 5 dakika</li>
+      <li>Bağlantı denemeleri: 10 bağlantı / dakika</li>
+      <li>Genel API: 100 istek / 15 dakika</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>WebRTC Configuration</h2>
+
+    <h3>ICE Servers</h3>
+    <pre class="code-js">
+{
+  iceServers: [
+    { urls: 'stun:stun.justdesk.io:3478' },
+    {
+      urls: 'turn:turn.justdesk.io:3478',
+      username: 'provided-username',
+      credential: 'provided-password'
+    }
+  ]
+}
+    </pre>
+
+    <h3>Media Constraints</h3>
+    <pre class="code-js">
+{
+  video: {
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+    frameRate: { ideal: 30 }
+  },
+  audio: true
+}
+    </pre>
+  </section>
+
+</body>
+</html>
