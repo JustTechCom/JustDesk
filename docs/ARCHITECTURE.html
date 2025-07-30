@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JustDesk Architecture</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0 auto;
+      padding: 40px 20px;
+      max-width: 960px;
+      background-color: #fefefe;
+      color: #2c3e50;
+      line-height: 1.7;
+    }
+    h1, h2, h3 {
+      color: #1e3a8a;
+    }
+    h1 {
+      font-size: 2.2em;
+      border-bottom: 3px solid #1e40af;
+      padding-bottom: 0.3em;
+    }
+    h2 {
+      margin-top: 2em;
+      font-size: 1.6em;
+      border-bottom: 2px solid #60a5fa;
+      padding-bottom: 0.2em;
+    }
+    h3 {
+      margin-top: 1.5em;
+      font-size: 1.2em;
+      color: #2563eb;
+    }
+    p, li {
+      font-size: 1em;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    code {
+      background-color: #e2e8f0;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+    pre.arch-diagram {
+      background-color: #f3f4f6;
+      border: 1px solid #cbd5e1;
+      padding: 15px;
+      overflow-x: auto;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      text-align: left;
+    }
+    th {
+      background-color: #f1f5f9;
+    }
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      font-size: 0.9em;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>JustDesk Architecture</h1>
+
+  <h2>Overview</h2>
+  <p>
+    JustDesk is a web-based remote desktop solution built with modern web technologies. It enables users to share their screens through web browsers without requiring any software installation.
+  </p>
+
+  <h2>System Architecture</h2>
+  <pre class="arch-diagram">
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│                 │     │                 │     │                 │
+│   Web Browser   │────▶│   Web Server    │────▶│ Signaling Server│
+│   (Frontend)    │◀────│    (Nginx)      │◀────│   (Node.js)     │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+│                                                │
+│                                                │
+│              ┌─────────────────┐              │
+│              │                 │              │
+└─────────────▶│   TURN Server   │◀─────────────┘
+│   (CoTURN)      │
+└─────────────────┘
+│
+▼
+┌─────────────────┐
+│                 │
+│     Redis       │
+│   (Sessions)    │
+└─────────────────┘
+  </pre>
+
+  <h2>Core Components</h2>
+
+  <h3>1. Frontend (Next.js + React)</h3>
+  <ul>
+    <li><strong>Purpose:</strong> User interface and WebRTC client</li>
+    <li><strong>Technology:</strong> Next.js, React, Tailwind CSS</li>
+    <li><strong>Key Features:</strong>
+      <ul>
+        <li>Screen capture using WebRTC</li>
+        <li>Real-time video streaming</li>
+        <li>Responsive design</li>
+        <li>PWA capabilities</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>2. Backend (Node.js + Socket.IO)</h3>
+  <ul>
+    <li><strong>Purpose:</strong> WebRTC signaling and session management</li>
+    <li><strong>Technology:</strong> Express, Socket.IO, Redis</li>
+    <li><strong>Key Features:</strong>
+      <ul>
+        <li>WebSocket connections for real-time signaling</li>
+        <li>Room management</li>
+        <li>Authentication and authorization</li>
+        <li>Rate limiting</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>3. TURN/STUN Server</h3>
+  <ul>
+    <li><strong>Purpose:</strong> NAT traversal for P2P connections</li>
+    <li><strong>Technology:</strong> CoTURN</li>
+    <li><strong>Key Features:</strong>
+      <ul>
+        <li>STUN for public IP discovery</li>
+        <li>TURN for relay when P2P fails</li>
+        <li>Bandwidth management</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>4. Redis</h3>
+  <ul>
+    <li><strong>Purpose:</strong> Session storage and pub/sub</li>
+    <li><strong>Technology:</strong> Redis 7+</li>
+    <li><strong>Key Features:</strong>
+      <ul>
+        <li>Room data storage</li>
+        <li>Session management</li>
+        <li>Real-time event broadcasting</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2>Data Flow</h2>
+
+  <h3>Connection Establishment</h3>
+  <ol>
+    <li>Host creates a room → Server generates Room ID & Password</li>
+    <li>Host starts screen capture → WebRTC creates offer</li>
+    <li>Viewer joins with credentials → Server validates</li>
+    <li>WebRTC negotiation → P2P connection established</li>
+    <li>Stream flows directly between peers</li>
+  </ol>
+
+  <h3>Security Measures</h3>
+  <ul>
+    <li>HTTPS/WSS encryption</li>
+    <li>Room passwords</li>
+    <li>Session timeouts</li>
+    <li>Rate limiting</li>
+    <li>CORS protection</li>
+  </ul>
+
+  <h2>Scalability Considerations</h2>
+
+  <h3>Horizontal Scaling</h3>
+  <ul>
+    <li>Multiple signaling servers behind a load balancer</li>
+    <li>Redis cluster for session sharing</li>
+    <li>Geographic distribution of TURN servers</li>
+  </ul>
+
+  <h3>Performance Optimization</h3>
+  <ul>
+    <li>P2P connections reduce server load</li>
+    <li>Adaptive bitrate for video quality</li>
+    <li>Connection pooling</li>
+    <li>Caching strategies</li>
+  </ul>
+
+  <h2>Technology Stack</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Layer</th>
+        <th>Technology</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Frontend</td>
+        <td>Next.js, React</td>
+        <td>UI Framework</td>
+      </tr>
+      <tr>
+        <td>Styling</td>
+        <td>Tailwind CSS</td>
+        <td>CSS Framework</td>
+      </tr>
+      <tr>
+        <td>WebRTC</td>
+        <td>SimplePeer</td>
+        <td>P2P Connection</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td>Node.js, Express</td>
+        <td>Server Framework</td>
+      </tr>
+      <tr>
+        <td>WebSocket</td>
+        <td>Socket.IO</td>
+        <td>Real-time Communication</td>
+      </tr>
+      <tr>
+        <td>Database</td>
+        <td>Redis</td>
+        <td>Session Storage</td>
+      </tr>
+      <tr>
+        <td>Proxy</td>
+        <td>Nginx</td>
+        <td>Reverse Proxy</td>
+      </tr>
+      <tr>
+        <td>Container</td>
+        <td>Docker</td>
+        <td>Containerization</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <footer>
+    &copy; 2025 JustTechCom – All rights reserved.
+  </footer>
+
+</body>
+</html>
