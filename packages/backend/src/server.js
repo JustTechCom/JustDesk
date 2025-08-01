@@ -738,14 +738,14 @@ app.use((req, res) => {
 });
 
 // Cleanup function for connection rates
-setInterval(() => {
+const connectionRateCleanup = setInterval(() => {
   const now = Date.now();
   for (const [ip, data] of connectionRates.entries()) {
-    if (now > data.resetTime + 300000) { // Clean up after 5 minutes
+    if (data.resetTime < now) {
       connectionRates.delete(ip);
     }
   }
-}, 300000); // Run every 5 minutes
+}, 60 * 1000); // Run every minute
 
 // Cleanup expired connections periodically
 setInterval(async () => {
@@ -835,6 +835,7 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM received, shutting down gracefully');
+  clearInterval(connectionRateCleanup);
   httpServer.close(() => {
     redis.disconnect();
     console.log('🛑 Server closed');
@@ -843,6 +844,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('👋 SIGINT received, shutting down gracefully');
+  clearInterval(connectionRateCleanup);
   httpServer.close(() => {
     redis.disconnect();
     console.log('🛑 Server closed');
