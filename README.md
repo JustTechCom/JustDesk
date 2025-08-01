@@ -29,10 +29,14 @@ cp .env.example .env
 
 # Start with Docker Compose
 docker-compose up -d
+```
 
-# Access at http://localhost:3000
-Manual Installation
-bash# Clone the repository
+Access at http://localhost:3000
+
+### Manual Installation
+
+```bash
+# Clone the repository
 git clone https://github.com/JustTechCom/JustDesk.git
 cd JustDesk
 
@@ -47,6 +51,8 @@ cp packages/frontend/.env.local.example packages/frontend/.env.local
 npm run dev
 
 # Access at http://localhost:3000
+```
+
 🛠️ Technology Stack
 
 Frontend: Next.js, React, Tailwind CSS
