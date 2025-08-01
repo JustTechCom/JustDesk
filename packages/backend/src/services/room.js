@@ -36,7 +36,12 @@ class RoomService {
     };
 
     const key = `${this.roomPrefix}${roomId}`;
-    await this.redis.set(key, room, config.room.sessionTimeout / 1000);
+    await this.redis.set(
+      key,
+      JSON.stringify(room),
+      'PX',
+      config.room.sessionTimeout
+    );
     
     logger.info(`Room created: ${roomId}`);
     return room;
@@ -44,24 +49,33 @@ class RoomService {
 
   async getRoom(roomId) {
     const key = `${this.roomPrefix}${roomId}`;
-    const room = await this.redis.get(key);
-    
-    if (room) {
+    const roomData = await this.redis.get(key);
+
+    if (roomData) {
+      const room = JSON.parse(roomData);
       // Update last activity
       room.lastActivity = Date.now();
-      await this.redis.set(key, room, config.room.sessionTimeout / 1000);
+      await this.redis.set(
+        key,
+        JSON.stringify(room),
+        'PX',
+        config.room.sessionTimeout
+      );
+      return room;
     }
-    
-    return room;
+
+    return null;
   }
 
   async joinRoom(roomId, viewerId) {
     const key = `${this.roomPrefix}${roomId}`;
-    const room = await this.redis.get(key);
-    
-    if (!room) {
+    const roomData = await this.redis.get(key);
+
+    if (!roomData) {
       return { success: false, error: 'Room not found' };
     }
+
+    const room = JSON.parse(roomData);
 
     if (room.participants.length >= config.room.maxViewers) {
       return { success: false, error: 'Room is full' };
@@ -70,21 +84,33 @@ class RoomService {
     if (!room.participants.includes(viewerId)) {
       room.participants.push(viewerId);
       room.lastActivity = Date.now();
-      await this.redis.set(key, room, config.room.sessionTimeout / 1000);
+      await this.redis.set(
+        key,
+        JSON.stringify(room),
+        'PX',
+        config.room.sessionTimeout
+      );
     }
-    
+
     return { success: true };
   }
 
   async leaveRoom(roomId, viewerId) {
     const key = `${this.roomPrefix}${roomId}`;
-    const room = await this.redis.get(key);
-    
-    if (!room) return;
+    const roomData = await this.redis.get(key);
+
+    if (!roomData) return;
+
+    const room = JSON.parse(roomData);
 
     room.participants = room.participants.filter(id => id !== viewerId);
     room.lastActivity = Date.now();
-    await this.redis.set(key, room, config.room.sessionTimeout / 1000);
+    await this.redis.set(
+      key,
+      JSON.stringify(room),
+      'PX',
+      config.room.sessionTimeout
+    );
   }
 
   async closeRoom(roomId) {
