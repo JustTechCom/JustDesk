@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Monitor, Copy, CheckCircle, XCircle, Users, Wifi, AlertCircle, Play, Square } from 'lucide-react';
+import { Monitor, Copy, CheckCircle, XCircle, Users, Wifi, AlertCircle } from 'lucide-react';
 import Layout from './Layout';
 import ScreenShare from './ScreenShare';
 import ConnectionPanel from './ConnectionPanel';
@@ -333,27 +333,6 @@ export default function ShareScreenComponent() {
               </div>
             )}
 
-            {/* Room Ready State - Room var ama sharing başlamamış */}
-            {roomId && !isSharing && (
-              <div className="mt-8 bg-yellow-600/20 backdrop-blur-lg rounded-xl p-4 border border-yellow-400/30">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
-                      <span className="text-white font-medium">Room Ready</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="w-5 h-5 text-blue-400 mr-2" />
-                      <span className="text-white">{viewers.length} waiting</span>
-                    </div>
-                  </div>
-                  <div className="text-yellow-200 text-sm flex items-center">
-                    <Play className="w-4 h-4 mr-1" />
-                    Click "Start Sharing" to begin 
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
