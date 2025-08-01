@@ -36,7 +36,11 @@ class RoomService {
     };
 
     const key = `${this.roomPrefix}${roomId}`;
-    await this.redis.set(key, room, config.room.sessionTimeout / 1000);
+    await this.redis.setex(
+      key,
+      config.room.sessionTimeout / 1000,
+      JSON.stringify(room)
+    );
     
     logger.info(`Room created: ${roomId}`);
     return room;
@@ -44,21 +48,27 @@ class RoomService {
 
   async getRoom(roomId) {
     const key = `${this.roomPrefix}${roomId}`;
-    const room = await this.redis.get(key);
-    
+    const roomData = await this.redis.get(key);
+    const room = roomData ? JSON.parse(roomData) : null;
+
     if (room) {
       // Update last activity
       room.lastActivity = Date.now();
-      await this.redis.set(key, room, config.room.sessionTimeout / 1000);
+      await this.redis.setex(
+        key,
+        config.room.sessionTimeout / 1000,
+        JSON.stringify(room)
+      );
     }
-    
+
     return room;
   }
 
   async joinRoom(roomId, viewerId) {
     const key = `${this.roomPrefix}${roomId}`;
-    const room = await this.redis.get(key);
-    
+    const roomData = await this.redis.get(key);
+    const room = roomData ? JSON.parse(roomData) : null;
+
     if (!room) {
       return { success: false, error: 'Room not found' };
     }
@@ -70,21 +80,30 @@ class RoomService {
     if (!room.participants.includes(viewerId)) {
       room.participants.push(viewerId);
       room.lastActivity = Date.now();
-      await this.redis.set(key, room, config.room.sessionTimeout / 1000);
+      await this.redis.setex(
+        key,
+        config.room.sessionTimeout / 1000,
+        JSON.stringify(room)
+      );
     }
-    
+
     return { success: true };
   }
 
   async leaveRoom(roomId, viewerId) {
     const key = `${this.roomPrefix}${roomId}`;
-    const room = await this.redis.get(key);
-    
+    const roomData = await this.redis.get(key);
+    const room = roomData ? JSON.parse(roomData) : null;
+
     if (!room) return;
 
     room.participants = room.participants.filter(id => id !== viewerId);
     room.lastActivity = Date.now();
-    await this.redis.set(key, room, config.room.sessionTimeout / 1000);
+    await this.redis.setex(
+      key,
+      config.room.sessionTimeout / 1000,
+      JSON.stringify(room)
+    );
   }
 
   async closeRoom(roomId) {
@@ -113,5 +132,4 @@ class RoomService {
     logger.info('Running room cleanup...');
   }
 }
-
 module.exports = RoomService;
