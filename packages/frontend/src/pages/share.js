@@ -219,31 +219,10 @@ export default function ShareScreen() {
     }
   };
 
-  // Calculate current session time
-  const getCurrentSessionTime = () => {
-    if (isSharing && sharingStartTime) {
-      const elapsed = Date.now() - sharingStartTime;
-      const minutes = Math.floor(elapsed / (1000 * 60));
-      const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
-    return null;
-  };
- 
-
   // Debug: viewer sayısının değişimini izle
   useEffect(() => {
     console.log('👥 Viewers state updated:', viewers.length, viewers);
   }, [viewers]);
-
-  // Debugging function - development only
-  const debugRoomStatus = async () => {
-    if (socket && roomId) {
-      socket.emit('get-room-status', roomId, (response) => {
-        console.log('🐛 Room status debug:', response);
-      });
-    }
-  };
 
   return (
     <Layout>
@@ -269,28 +248,6 @@ export default function ShareScreen() {
                 </div>
               )}
                
-              {/* Session Status Indicator */}
-              {roomId && (
-                <div className="mt-4 inline-flex items-center space-x-4 text-sm">
-                  <div className="flex items-center">
-                    <div className={`w-3 h-3 rounded-full mr-2 ${
-                      isSharing ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'
-                    }`}></div>
-                    <span className="text-gray-300">
-                      {isSharing ? 'Live Session' : 'Ready to Share'}
-                    </span>
-                  </div>
-                  {isSharing && sharingStartTime && (
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 text-blue-400 mr-1" />
-                      <span className="text-blue-400">
-                        {getCurrentSessionTime()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-              
               {/* Debug panel - sadece development için */}
               {process.env.NODE_ENV === 'development' && (
                 <div className="mt-4 bg-gray-800/50 rounded-lg p-3 text-sm text-gray-300">
@@ -349,34 +306,6 @@ export default function ShareScreen() {
                 />
               </div>
             </div>
-
-            {/* Live Session Info */}
-            {isSharing && (
-              <div className="mt-8 bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse mr-2"></div>
-                      <span className="text-white font-medium">LIVE</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="w-5 h-5 text-blue-400 mr-2" />
-                      <span className="text-white">{viewers.length} viewers watching</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="w-5 h-5 text-green-400 mr-2" />
-                      <span className="text-white">
-                        Duration: {getCurrentSessionTime() || '0:00'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-gray-400 text-sm"> 
-                    Started at {sharingStartTime ? new Date(sharingStartTime).toLocaleTimeString() : '--:--'}
-                  </div>
-                </div>
-              </div>
-            )}
-
           </div>
         </div>
       </div>
