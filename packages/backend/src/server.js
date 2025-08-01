@@ -7,6 +7,8 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const compression = require('compression');
 const config = require('./config');
+const crypto = require('crypto');
+
 
 const app = express();
 const httpServer = createServer(app);
@@ -175,11 +177,11 @@ const connectionRates = new Map(); // IP-based connection tracking
 
 // Helper functions
 function generateRoomId() {
-  return Math.floor(100000000 + Math.random() * 900000000).toString();
+  return crypto.randomInt(100000000, 999999999).toString();
 }
 
 function generatePassword() {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
+  return crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
 // Rate limited Redis health check
@@ -739,14 +741,14 @@ app.use((req, res) => {
 });
 
 // Cleanup function for connection rates
-setInterval(() => {
+const connectionRateCleanup = setInterval(() => {
   const now = Date.now();
   for (const [ip, data] of connectionRates.entries()) {
-    if (now > data.resetTime + 300000) { // Clean up after 5 minutes
+    if (data.resetTime < now) {
       connectionRates.delete(ip);
     }
   }
-}, 300000); // Run every 5 minutes
+}, 60 * 1000); // Run every minute
 
 // Cleanup expired connections periodically
 setInterval(async () => {
@@ -836,6 +838,7 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM received, shutting down gracefully');
+  clearInterval(connectionRateCleanup);
   httpServer.close(() => {
     redis.disconnect();
     console.log('🛑 Server closed');
@@ -844,6 +847,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('👋 SIGINT received, shutting down gracefully');
+  clearInterval(connectionRateCleanup);
   httpServer.close(() => {
     redis.disconnect();
     console.log('🛑 Server closed');
