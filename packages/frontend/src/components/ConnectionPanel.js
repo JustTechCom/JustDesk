@@ -3,8 +3,7 @@ import { Copy, CheckCircle, Users, Lock, Clock, Share2 } from 'lucide-react';
  
 export default function ConnectionPanel({ roomId, password, viewers, isSharing, sharingStartTime }) {
   const [copiedField, setCopiedField] = useState('');
-  const [timeRemaining, setTimeRemaining] = useState('--:--');
-  const [sessionDuration, setSessionDuration] = useState('--:--'); 
+  const [sessionDuration, setSessionDuration] = useState('--:--');
 
   const copyToClipboard = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -20,7 +19,6 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
   // Gerçek zamanlı süre hesaplama - SADECE sharing başladığında
   useEffect(() => {
     if (!isSharing || !sharingStartTime) {
-      setTimeRemaining('--:--');
       setSessionDuration('--:--');
       return;
     }
@@ -28,47 +26,18 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
     const updateTimer = () => {
       const now = Date.now();
       const elapsed = now - sharingStartTime;
-      const sessionDuration = 60 * 60 * 1000; // 1 saat
-      const remaining = Math.max(0, sessionDuration - elapsed);
-      
-      // Remaining time hesaplama
-      const remainingMinutes = Math.floor(remaining / (1000 * 60));
-      const remainingSeconds = Math.floor((remaining % (1000 * 60)) / 1000);
-      setTimeRemaining(`${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`);
-      
-      // Session duration hesaplama
+
       const elapsedMinutes = Math.floor(elapsed / (1000 * 60));
-      const elapsedSecondsInMinute = Math.floor((elapsed % (1000 * 60)) / 1000);
-      setSessionDuration(`${elapsedMinutes}:${elapsedSecondsInMinute.toString().padStart(2, '0')}`);
-      
-      // Session bitti mi kontrol et
-      if (remaining <= 0) {
-        setTimeRemaining('00:00');
-        // Optional: Session bittiğinde bir event emit edebiliriz
-      }
+      const elapsedSeconds = Math.floor((elapsed % (1000 * 60)) / 1000);
+      setSessionDuration(`${elapsedMinutes}:${elapsedSeconds.toString().padStart(2, '0')}`);
     };
 
-    // İlk hesaplama
     updateTimer();
-    
-    // Her saniye güncelle
+
     const interval = setInterval(updateTimer, 1000);
-    
+
     return () => clearInterval(interval);
   }, [isSharing, sharingStartTime]);
-
-  const getTimerColor = () => {
-    if (!isSharing) return 'text-gray-400';
-    
-    const timeString = timeRemaining;
-    if (timeString === '--:--') return 'text-gray-400';
-    
-    const [minutes] = timeString.split(':').map(Number);
-    
-    if (minutes > 10) return 'text-green-400';
-    if (minutes > 5) return 'text-yellow-400';
-    return 'text-red-400';
-  }; 
 
   return (
     <div className="space-y-6">
@@ -167,18 +136,6 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
             </div>
           )}
           
-          {/* Time Remaining - Sadece sharing başladığında görünür */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Clock className="w-5 h-5 text-yellow-400 mr-2" />
-              <span className="text-gray-300">
-                {isSharing ? 'Time Remaining' : 'Session Time'}
-              </span>
-            </div> 
-            <span className={`font-medium ${getTimerColor()}`}>
-              {isSharing ? timeRemaining : '60:00'}
-            </span> 
-          </div>
         </div>
 
         {/* Session Status */}
