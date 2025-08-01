@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head'; 
-import { AlertCircle } from 'lucide-react';
+import { Wifi, Users, AlertCircle, Monitor, Clock } from 'lucide-react';
 import Layout from '../components/Layout';
 import ScreenShare from '../components/ScreenShare';
 import ConnectionPanel from '../components/ConnectionPanel';
@@ -306,7 +306,6 @@ export default function ShareScreen() {
                 />
               </div>
             </div>
-
           </div>
         </div>
       </div>

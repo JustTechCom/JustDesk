@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Head from 'next/head';
-import { AlertCircle } from 'lucide-react';
+import { Monitor, Copy, CheckCircle, XCircle, Users, Wifi, AlertCircle } from 'lucide-react';
+import Layout from './Layout';
 import ScreenShare from './ScreenShare';
 import ConnectionPanel from './ConnectionPanel';
 import useWebRTC from '../hooks/useWebRTC';
@@ -278,7 +278,6 @@ export default function ShareScreenComponent() {
                 />
               </div>
             </div>
-
           </div>
         </div>
       </div>
