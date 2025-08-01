@@ -89,8 +89,7 @@ class AuthService {
     return `${prefix}${key}`;
   }
 
-  // Hash sensitive data
-  // Hash sensitive data
+  // Generate a secure SHA-256 hash of the provided data using the session secret
   hashData(data) {
     return crypto
       .createHash('sha256')
