@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Monitor, Copy, CheckCircle, XCircle, Users, Wifi, AlertCircle, Play, Square } from 'lucide-react';
-import Layout from './Layout';
+import { AlertCircle } from 'lucide-react';
 import ScreenShare from './ScreenShare';
 import ConnectionPanel from './ConnectionPanel';
 import useWebRTC from '../hooks/useWebRTC';
@@ -207,17 +206,6 @@ export default function ShareScreenComponent() {
     }
   };
 
-  // Calculate session time for display
-  const getSessionInfo = () => {
-    if (isSharing && sharingStartTime) {
-      const elapsed = Date.now() - sharingStartTime;
-      const minutes = Math.floor(elapsed / (1000 * 60));
-      const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
-    return null;
-  }; 
-
   // Debug: viewer sayısının değişimini izle
   useEffect(() => {
     console.log('Viewers updated:', viewers);
@@ -247,23 +235,6 @@ export default function ShareScreenComponent() {
                 </div>
               )}
                
-              {/* Session Status */}
-              {roomId && (
-                <div className="mt-4 inline-flex items-center space-x-4 text-sm">
-                  <div className="flex items-center">
-                    <div className={`w-3 h-3 rounded-full mr-2 ${isSharing ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-                    <span className="text-gray-300">
-                      {isSharing ? 'Live Session' : 'Ready to Share'}
-                    </span>
-                  </div>
-                  {isSharing && sharingStartTime && (
-                    <span className="text-blue-400">
-                      Duration: {getSessionInfo()}
-                    </span>
-                  )}
-                </div>
-              )}
-              
               {/* Debug panel - sadece development için */}
               {process.env.NODE_ENV === 'development' && (
                 <div className="mt-4 bg-gray-800/50 rounded-lg p-3 text-sm text-gray-300">
@@ -308,52 +279,6 @@ export default function ShareScreenComponent() {
               </div>
             </div>
 
-            {/* Live Session Bar - Sharing başladığında görünür */}
-            {isSharing && (
-              <div className="mt-8 bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse mr-2"></div>
-                      <span className="text-white font-medium">LIVE</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="w-5 h-5 text-blue-400 mr-2" />
-                      <span className="text-white">{viewers.length} viewers watching</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="w-5 h-5 text-green-400 mr-2" />
-                      <span className="text-white">Duration: {getSessionInfo() || '0:00'}</span>
-                    </div>
-                  </div>
-                  <div className="text-gray-400 text-sm"> 
-                    Started at {sharingStartTime ? new Date(sharingStartTime).toLocaleTimeString() : '--:--'}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Room Ready State - Room var ama sharing başlamamış */}
-            {roomId && !isSharing && (
-              <div className="mt-8 bg-yellow-600/20 backdrop-blur-lg rounded-xl p-4 border border-yellow-400/30">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
-                      <span className="text-white font-medium">Room Ready</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="w-5 h-5 text-blue-400 mr-2" />
-                      <span className="text-white">{viewers.length} waiting</span>
-                    </div>
-                  </div>
-                  <div className="text-yellow-200 text-sm flex items-center">
-                    <Play className="w-4 h-4 mr-1" />
-                    Click "Start Sharing" to begin 
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
