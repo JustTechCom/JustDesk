@@ -25,7 +25,7 @@ class RoomService {
   async createRoom(hostId) {
     const roomId = this.generateRoomId().toString();
     const password = this.generatePassword();
-    
+     
     const room = {
       roomId,
       hostId,
@@ -41,13 +41,14 @@ class RoomService {
       JSON.stringify(room),
       'PX',
       config.room.sessionTimeout
+ 
     );
     
     logger.info(`Room created: ${roomId}`);
     return room;
   }
 
-  async getRoom(roomId) {
+  async getRoom(roomId) { 
     const key = `${this.roomPrefix}${roomId}`;
     const roomData = await this.redis.get(key);
 
@@ -89,6 +90,7 @@ class RoomService {
         JSON.stringify(room),
         'PX',
         config.room.sessionTimeout
+ 
       );
     }
 
@@ -98,7 +100,7 @@ class RoomService {
   async leaveRoom(roomId, viewerId) {
     const key = `${this.roomPrefix}${roomId}`;
     const roomData = await this.redis.get(key);
-
+ 
     if (!roomData) return;
 
     const room = JSON.parse(roomData);
@@ -110,6 +112,7 @@ class RoomService {
       JSON.stringify(room),
       'PX',
       config.room.sessionTimeout
+ 
     );
   }
 
@@ -136,8 +139,8 @@ class RoomService {
     // This would be called periodically to clean up expired rooms
     // Redis TTL handles this automatically, but this method could be used
     // for additional cleanup logic if needed
-    logger.info('Running room cleanup...');
+    logger.info('Running room cleanup...'); 
   }
 }
-
+ 
 module.exports = RoomService;
