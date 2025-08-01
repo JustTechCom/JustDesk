@@ -1,32 +1,58 @@
 require('dotenv').config();
+const Joi = require('joi');
+
+// Validate and parse environment variables
+const envSchema = Joi.object({
+  NODE_ENV: Joi.string().default('development'),
+  PORT: Joi.string().pattern(/^\d+$/).default('3001'),
+  FRONTEND_URL: Joi.string().uri().required(),
+  REDIS_URL: Joi.string().uri(),
+  REDIS_HOST: Joi.string().default('localhost'),
+  REDIS_PORT: Joi.string().pattern(/^\d+$/).default('6379'),
+  REDIS_PASSWORD: Joi.string().allow(''),
+  SESSION_SECRET: Joi.string().default('change-this-secret'),
+  JWT_SECRET: Joi.string().default('change-this-jwt-secret'),
+  RATE_LIMIT_WINDOW_MS: Joi.string().pattern(/^\d+$/).default(String(15 * 60 * 1000)),
+  RATE_LIMIT_MAX_REQUESTS: Joi.string().pattern(/^\d+$/).default('100'),
+  LOG_LEVEL: Joi.string().default('info'),
+  LOG_FILE: Joi.string().default('logs/app.log')
+}).unknown();
+
+const { value: env, error } = envSchema.validate(process.env, { abortEarly: false });
+
+if (error) {
+  console.error('❌ Environment validation error:', error.details.map(d => d.message).join(', '));
+  process.exit(1);
+}
 
 module.exports = {
   app: {
-    env: process.env.NODE_ENV || 'development',
-    port: parseInt(process.env.PORT, 10) || 3001,
-    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
+    env: env.NODE_ENV,
+    port: parseInt(env.PORT, 10),
+    frontendUrl: env.FRONTEND_URL
   },
   redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-    password: process.env.REDIS_PASSWORD,
+    url: env.REDIS_URL,
+    host: env.REDIS_HOST,
+    port: parseInt(env.REDIS_PORT, 10),
+    password: env.REDIS_PASSWORD,
     db: 0,
     keyPrefix: 'justdesk:'
   },
   security: {
-    sessionSecret: process.env.SESSION_SECRET || 'change-this-secret',
-    jwtSecret: process.env.JWT_SECRET || 'change-this-jwt-secret',
+    sessionSecret: env.SESSION_SECRET,
+    jwtSecret: env.JWT_SECRET,
     bcryptRounds: 10
   },
   rateLimit: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || 100
+    windowMs: parseInt(env.RATE_LIMIT_WINDOW_MS, 10),
+    max: parseInt(env.RATE_LIMIT_MAX_REQUESTS, 10)
   },
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: env.FRONTEND_URL,
     credentials: true,
     methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
   },
   room: {
     maxViewers: 10,
@@ -41,7 +67,8 @@ module.exports = {
     ]
   },
   logging: {
-    level: process.env.LOG_LEVEL || 'info',
-    file: process.env.LOG_FILE || 'logs/app.log'
+    level: env.LOG_LEVEL,
+    file: env.LOG_FILE
   }
 };
+

@@ -6,7 +6,9 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const compression = require('compression');
+const config = require('./config');
 const crypto = require('crypto');
+
 
 const app = express();
 const httpServer = createServer(app);
@@ -90,8 +92,8 @@ let redisHealthCache = {
 };
 
 try {
-  if (process.env.REDIS_URL) {
-    redis = new Redis(process.env.REDIS_URL, {
+  if (config.redis.url) {
+    redis = new Redis(config.redis.url, {
       retryStrategy: (times) => {
         console.log(`Redis retry attempt ${times}`);
         return Math.min(times * 50, 2000);
@@ -103,9 +105,9 @@ try {
     });
   } else {
     redis = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: process.env.REDIS_PORT || 6379,
-      password: process.env.REDIS_PASSWORD,
+      host: config.redis.host,
+      port: config.redis.port,
+      password: config.redis.password,
       retryStrategy: (times) => {
         console.log(`Redis retry attempt ${times}`);
         return Math.min(times * 50, 2000);
@@ -143,7 +145,7 @@ try {
 // CORS configuration
 const corsOptions = {
   origin: [
-    process.env.FRONTEND_URL,
+    config.app.frontendUrl,
     'http://localhost:3000',
     'https://localhost:3000',
     /\.onrender\.com$/,
@@ -820,10 +822,10 @@ setInterval(async () => {
  
 
 // Start server
-const PORT = process.env.PORT || 3001;
+const PORT = config.app.port;
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 JustDesk backend running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+  console.log(`🌍 Environment: ${config.app.env}`);
   console.log(`🔗 CORS origins: ${Array.isArray(corsOptions.origin) ? corsOptions.origin.join(', ') : corsOptions.origin}`);
   console.log(`🛡️ Security middleware enabled`);
   console.log(`📊 Active connections tracking: enabled`);
