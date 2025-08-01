@@ -116,7 +116,7 @@ export default function Home() {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleConnect()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
                   className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors"
                 />
               </div>
