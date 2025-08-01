@@ -6,6 +6,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const compression = require('compression');
+const crypto = require('crypto');
 
 const app = express();
 const httpServer = createServer(app);
@@ -174,11 +175,11 @@ const connectionRates = new Map(); // IP-based connection tracking
 
 // Helper functions
 function generateRoomId() {
-  return Math.floor(100000000 + Math.random() * 900000000).toString();
+  return crypto.randomInt(100000000, 999999999).toString();
 }
 
 function generatePassword() {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
+  return crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
 // Rate limited Redis health check
