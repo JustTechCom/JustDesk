@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Head from 'next/head'; 
+import Head from 'next/head';
 import { Wifi, Users, AlertCircle, Monitor, Clock } from 'lucide-react';
 import Layout from '../components/Layout';
 import ScreenShare from '../components/ScreenShare';
 import ConnectionPanel from '../components/ConnectionPanel';
 import useWebRTC from '../hooks/useWebRTC';
 import useSocket from '../hooks/useSocket';
+import ViewerChart from '../components/ViewerChart';
 
 export default function ShareScreen() {
   const router = useRouter();
@@ -15,11 +16,12 @@ export default function ShareScreen() {
   const [isSharing, setIsSharing] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [error, setError] = useState('');
-  const [connectionError, setConnectionError] = useState(''); 
+  const [connectionError, setConnectionError] = useState('');
   const [sessionStartTime, setSessionStartTime] = useState(null); // Room creation
-  const [sharingStartTime, setSharingStartTime] = useState(null); // Actual sharing start 
+  const [sharingStartTime, setSharingStartTime] = useState(null); // Actual sharing start
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
-  
+  const [viewerStats, setViewerStats] = useState([]);
+
   const { socket, connected } = useSocket();
   const { startScreenShare, stopScreenShare, stream } = useWebRTC(socket);
 
@@ -31,6 +33,39 @@ export default function ShareScreen() {
       setConnectionError('Connecting to server...');
     }
   }, [connected, roomId, isCreatingRoom]);
+
+  useEffect(() => {
+    if (roomId) {
+      fetch(`/api/rooms/${roomId}/analytics`)
+        .then((res) => res.json())
+        .then((data) => {
+          const formatted = data.stats.map((s) => ({
+            time: new Date(s.timestamp).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            count: s.count,
+            events: s.events,
+          }));
+          setViewerStats(formatted);
+        })
+        .catch((err) => console.error('Failed to load analytics', err));
+    }
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleStats = (stats) => {
+      const formatted = stats.map((s) => ({
+        time: new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        count: s.count,
+        events: s.events,
+      }));
+      setViewerStats(formatted);
+    };
+    socket.on('viewer-stats', handleStats);
+    return () => socket.off('viewer-stats', handleStats);
+  }, [socket]);
 
   const createRoom = () => {
     if (!socket) {
@@ -46,11 +81,11 @@ export default function ShareScreen() {
 
     setIsCreatingRoom(true);
     console.log('Emitting create-room event...');
-    
+
     socket.emit('create-room', (response) => {
       console.log('Room creation response:', response);
       setIsCreatingRoom(false);
-      
+
       if (response && response.success) {
         setRoomId(String(response.roomId));
         setPassword(String(response.password));
@@ -68,23 +103,22 @@ export default function ShareScreen() {
     try {
       console.log('🎥 Starting screen share...');
       await startScreenShare();
-      
+
       // Sharing başladığında timer'ı başlat
       const shareStartTime = Date.now();
       setSharingStartTime(shareStartTime);
       setIsSharing(true);
       setError('');
-      
+
       console.log('✅ Screen sharing started at:', new Date(shareStartTime).toLocaleTimeString());
-      
+
       // Backend'e sharing başladığını bildir
       if (socket && roomId) {
         socket.emit('sharing-started', {
           roomId,
-          startTime: shareStartTime
+          startTime: shareStartTime,
         });
       }
-      
     } catch (err) {
       setError('Failed to start screen sharing. Please check permissions.');
       console.error('❌ Screen sharing failed:', err);
@@ -95,15 +129,15 @@ export default function ShareScreen() {
     console.log('🛑 Stopping screen share...');
     stopScreenShare();
     setIsSharing(false);
-    
+
     // Backend'e sharing durduğunu bildir
     if (socket && roomId) {
       socket.emit('sharing-stopped', {
         roomId,
-        stopTime: Date.now()
+        stopTime: Date.now(),
       });
     }
-    
+
     setSharingStartTime(null); // Timer'ı reset et
     router.push('/');
   };
@@ -111,39 +145,39 @@ export default function ShareScreen() {
   // Socket event handlers
   useEffect(() => {
     if (socket) {
-      const handleViewerJoined = ({ viewerId, roomId: joinedRoomId, joinedAt }) => {
+      const handleViewerJoined = ({ viewerId, nickname, roomId: joinedRoomId, joinedAt }) => {
         console.log('🎯 Viewer joined event received:', viewerId, 'Room:', joinedRoomId);
-        setViewers(prev => {
- 
-          const exists = prev.some(v => v.id === viewerId);
+        setViewers((prev) => {
+          const exists = prev.some((v) => v.id === viewerId);
           if (!exists) {
-            const newViewer = { 
-              id: viewerId, 
-              joinedAt: joinedAt || Date.now() 
+            const newViewer = {
+              id: viewerId,
+              name: nickname || '',
+              joinedAt: joinedAt || Date.now(),
             };
-            console.log('➕ Adding viewer to list:', newViewer); 
-            return [...prev, newViewer]; 
+            console.log('➕ Adding viewer to list:', newViewer);
+            return [...prev, newViewer];
           }
           console.log('⚠️ Viewer already exists in list');
           return prev;
         });
-      }; 
+      };
 
-      const handleViewerDisconnected = ({ viewerId, totalViewers }) => {
+      const handleViewerDisconnected = ({ viewerId }) => {
         console.log('🎯 Viewer disconnected event received:', viewerId);
-        setViewers(prev => {
-          const filtered = prev.filter(v => v.id !== viewerId);
+        setViewers((prev) => {
+          const filtered = prev.filter((v) => v.id !== viewerId);
           console.log('➖ Removing viewer from list. New count:', filtered.length);
           return filtered;
         });
       };
 
-      const handleParticipantUpdate = ({ type, viewerId, totalViewers }) => {
-        console.log('🎯 Participant update:', type, viewerId, 'Total:', totalViewers);
+      const handleParticipantUpdate = ({ type, viewerId, nickname }) => {
+        console.log('🎯 Participant update:', type, viewerId);
         if (type === 'joined') {
-          handleViewerJoined({ viewerId, joinedAt: Date.now() });
+          handleViewerJoined({ viewerId, nickname, joinedAt: Date.now() });
         } else if (type === 'left') {
-          handleViewerDisconnected({ viewerId, totalViewers });
+          handleViewerDisconnected({ viewerId });
         }
       };
 
@@ -153,7 +187,7 @@ export default function ShareScreen() {
         setError('Session expired after 1 hour');
         setIsSharing(false);
         setSharingStartTime(null);
-        
+
         // Auto redirect after a delay
         setTimeout(() => {
           router.push('/');
@@ -234,33 +268,30 @@ export default function ShareScreen() {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-white mb-4">
-                Share Your Screen
-              </h1>
+              <h1 className="text-4xl font-bold text-white mb-4">Share Your Screen</h1>
               <p className="text-xl text-gray-300">
                 Share your screen securely with anyone, anywhere
               </p>
-              
+
               {connectionError && (
                 <div className="mt-4 bg-yellow-600/20 border border-yellow-600/50 rounded-lg px-4 py-2 inline-flex items-center text-yellow-300">
                   <AlertCircle className="w-5 h-5 mr-2" />
                   {connectionError}
                 </div>
               )}
-               
+
               {/* Debug panel - sadece development için */}
               {process.env.NODE_ENV === 'development' && (
                 <div className="mt-4 bg-gray-800/50 rounded-lg p-3 text-sm text-gray-300">
                   <div className="flex items-center justify-center space-x-4 flex-wrap">
- 
                     <span>🔌 Connected: {connected ? '✅' : '❌'}</span>
                     <span>🏠 Room: {roomId || 'None'}</span>
                     <span>👥 Viewers: {viewers.length}</span>
-                    <span>📺 Sharing: {isSharing ? '✅' : '❌'}</span> 
+                    <span>📺 Sharing: {isSharing ? '✅' : '❌'}</span>
                     <span>⏱️ Timer: {sharingStartTime ? '✅' : '❌'}</span>
                     {roomId && (
                       <>
-                        <button 
+                        <button
                           onClick={() => {
                             socket.emit('get-room-status', roomId, (response) => {
                               console.log('🐛 Room status:', response);
@@ -270,14 +301,13 @@ export default function ShareScreen() {
                         >
                           Room Status
                         </button>
-                        <button 
+                        <button
                           onClick={debugSharingStats}
                           className="px-2 py-1 bg-green-600 rounded text-xs"
                         >
                           Sharing Stats
                         </button>
                       </>
- 
                     )}
                   </div>
                 </div>
@@ -295,15 +325,15 @@ export default function ShareScreen() {
                 />
               </div>
 
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 space-y-8">
                 <ConnectionPanel
                   roomId={roomId}
                   password={password}
                   viewers={viewers}
-                  isSharing={isSharing} 
-                  sharingStartTime={sharingStartTime} // Sharing timer için
- 
+                  isSharing={isSharing}
+                  sharingStartTime={sharingStartTime}
                 />
+                <ViewerChart data={viewerStats} />
               </div>
             </div>
           </div>
