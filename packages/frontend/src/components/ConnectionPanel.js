@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Copy, CheckCircle, Users, Lock, Clock, Share2 } from 'lucide-react';
- 
-export default function ConnectionPanel({ roomId, password, viewers, isSharing, sharingStartTime }) {
+
+export default function ConnectionPanel({
+  roomId,
+  password,
+  viewers,
+  isSharing,
+  sharingStartTime,
+}) {
   const [copiedField, setCopiedField] = useState('');
   const [sessionDuration, setSessionDuration] = useState('--:--');
 
@@ -15,7 +21,7 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
     const url = `${window.location.origin}/view?room=${roomId}&pwd=${password}`;
     copyToClipboard(url, 'link');
   };
- 
+
   // Gerçek zamanlı süre hesaplama - SADECE sharing başladığında
   useEffect(() => {
     if (!isSharing || !sharingStartTime) {
@@ -44,7 +50,7 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
       {/* Connection Info */}
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
         <h2 className="text-xl font-semibold text-white mb-4">Connection Details</h2>
-        
+
         <div className="space-y-4">
           {/* Room ID */}
           <div>
@@ -113,7 +119,7 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
       {/* Session Info */}
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
         <h3 className="text-lg font-semibold text-white mb-4">Session Info</h3>
-        
+
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -124,7 +130,7 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
               {Array.isArray(viewers) ? viewers.length : 0}
             </span>
           </div>
-          
+
           {/* Session Duration - Sharing başladığından bu yana geçen süre */}
           {isSharing && (
             <div className="flex items-center justify-between">
@@ -135,7 +141,6 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
               <span className="text-white font-medium">{sessionDuration}</span>
             </div>
           )}
-          
         </div>
 
         {/* Session Status */}
@@ -157,7 +162,8 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
                 <div key={viewer.id || index} className="flex items-center text-sm">
                   <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
                   <span className="text-gray-300">
-                    Viewer {viewer.id ? viewer.id.substring(0, 8) : `#${index + 1}`}
+                    {viewer.name ||
+                      `Viewer ${viewer.id ? viewer.id.substring(0, 8) : `#${index + 1}`}`}
                   </span>
                   {viewer.joinedAt && (
                     <span className="text-gray-500 ml-2 text-xs">
@@ -175,8 +181,8 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
       {!isSharing && roomId && (
         <div className="bg-yellow-600/20 backdrop-blur-lg rounded-xl p-4 border border-yellow-400/30">
           <p className="text-sm text-yellow-200">
-            <strong>Ready to share!</strong> Click "Start Sharing" to begin your screen sharing session. 
-            The 1-hour timer will start when you begin sharing.
+            <strong>Ready to share!</strong> Click "Start Sharing" to begin your screen sharing
+            session. The 1-hour timer will start when you begin sharing.
           </p>
         </div>
       )}
@@ -184,8 +190,8 @@ export default function ConnectionPanel({ roomId, password, viewers, isSharing, 
       {isSharing && (
         <div className="bg-blue-600/20 backdrop-blur-lg rounded-xl p-4 border border-blue-400/30">
           <p className="text-sm text-blue-200">
-            <strong>Live Session Active!</strong> Share the Room ID and Password with people you want to give access to your screen.
-            The session will expire after 1 hour of sharing.
+            <strong>Live Session Active!</strong> Share the Room ID and Password with people you
+            want to give access to your screen. The session will expire after 1 hour of sharing.
           </p>
         </div>
       )}

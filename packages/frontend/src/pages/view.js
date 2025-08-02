@@ -15,7 +15,9 @@ export default function ViewScreen() {
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
   const [hostId, setHostId] = useState('');
-  
+  const [nickname, setNickname] = useState('');
+  const [nicknameSubmitted, setNicknameSubmitted] = useState(false);
+
   const { socket } = useSocket();
   const { remoteStream, connectToPeer } = useWebRTC(socket);
 
@@ -26,7 +28,6 @@ export default function ViewScreen() {
       if (room && pwd) {
         setRoomId(room);
         setPassword(pwd);
-        setConnecting(true);
       } else {
         router.push('/');
       }
@@ -34,13 +35,13 @@ export default function ViewScreen() {
   }, [router.isReady, router.query]);
 
   useEffect(() => {
-    if (socket && roomId && password && connecting) {
+    if (socket && roomId && password && nicknameSubmitted && connecting) {
       joinRoom();
     }
-  }, [socket, roomId, password, connecting]);
+  }, [socket, roomId, password, nicknameSubmitted, connecting]);
 
   const joinRoom = () => {
-    socket.emit('join-room', { roomId, password }, (response) => {
+    socket.emit('join-room', { roomId, password, nickname }, (response) => {
       if (response.success) {
         setHostId(response.hostId);
         setConnected(true);
@@ -84,6 +85,37 @@ export default function ViewScreen() {
     );
   }
 
+  if (!nicknameSubmitted) {
+    return (
+      <Layout>
+        <Head>
+          <title>Enter Nickname - JustDesk</title>
+        </Head>
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+          <div className="bg-black/50 backdrop-blur-lg p-6 rounded-xl border border-white/10 w-80">
+            <h2 className="text-white mb-4 text-center">Choose a nickname (optional)</h2>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              className="w-full px-3 py-2 mb-4 rounded bg-white/10 text-white placeholder-gray-400 focus:outline-none"
+              placeholder="Nickname"
+            />
+            <button
+              onClick={() => {
+                setNicknameSubmitted(true);
+                setConnecting(true);
+              }}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+            >
+              Join Session
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <Head>
@@ -97,16 +129,14 @@ export default function ViewScreen() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <Monitor className="w-6 h-6 text-blue-400" />
-                <h1 className="text-xl font-semibold text-white">
-                  Remote Desktop View
-                </h1>
+                <h1 className="text-xl font-semibold text-white">Remote Desktop View</h1>
                 {connected && (
                   <span className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm">
                     Connected
                   </span>
                 )}
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
                   <Volume2 className="w-5 h-5 text-white" />
@@ -151,11 +181,7 @@ export default function ViewScreen() {
               </div>
             </div>
           ) : (
-            <RemoteViewer
-              stream={remoteStream}
-              connected={connected}
-              roomId={roomId}
-            />
+            <RemoteViewer stream={remoteStream} connected={connected} roomId={roomId} />
           )}
         </div>
       </div>

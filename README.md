@@ -14,6 +14,7 @@ Web-based remote desktop solution that requires no installation. Share your scre
 - ⚡ **Low Latency** - Peer-to-peer connections for optimal performance
 - 🎯 **Simple** - Share with just an ID and password
 - 📱 **Responsive** - Mobile-friendly interface
+- 📈 **Viewer Analytics** - Real-time chart of viewer counts
 
 ## 🚀 Quick Start
 
@@ -68,6 +69,12 @@ Deployment Guide
 API Documentation
 Troubleshooting
 
+### Viewer Analytics
+
+Join and leave events are tracked for each room and stored in Redis. Analytics for the last hour can be fetched via `GET /api/rooms/:id/analytics` or received in real time through the `viewer-stats` Socket.IO event. The share page displays these metrics in a live chart. Install dependencies and start the app normally to enable this feature.
+
+Viewers may optionally provide a nickname when joining a session. These nicknames appear in the viewer list and in the analytics tooltip for each minute.
+
 🤝 Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -90,13 +97,13 @@ Create an Issue
 Email: info@justtech.work
 Discord: Join our community
 
-
 Getting Help
 Log Collection
 bash# Collect all logs
 ./scripts/collect-logs.sh
 
 # Create support bundle
+
 tar -czf support-bundle.tar.gz logs/ .env docker-compose.yml
 Information to Provide
 
