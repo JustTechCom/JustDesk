@@ -14,6 +14,11 @@ module.exports = {
     OFFER: 'offer',
     ANSWER: 'answer',
     ICE_CANDIDATE: 'ice-candidate',
+
+    // File transfer events
+    FILE_TRANSFER_INIT: 'file-transfer-init',
+    FILE_TRANSFER_CHUNK: 'file-transfer-chunk',
+    FILE_TRANSFER_COMPLETE: 'file-transfer-complete',
     
     // Participant events
     VIEWER_JOINED: 'viewer-joined',
