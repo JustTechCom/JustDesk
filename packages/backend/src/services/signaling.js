@@ -1,29 +1,33 @@
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../utils/logger');
-const roomService = require('./room');
 
 class SignalingService {
-  constructor(io, redis) {
+  constructor(io, redis, fileTransferService, roomService) {
     this.io = io;
     this.redis = redis;
+    this.fileTransferService = fileTransferService;
+    this.roomService = roomService;
     this.connections = new Map();
   }
 
   handleConnection(socket) {
     logger.info(`New socket connection: ${socket.id}`);
-    
+
     socket.on('create-room', (callback) => this.handleCreateRoom(socket, callback));
     socket.on('join-room', (data, callback) => this.handleJoinRoom(socket, data, callback));
     socket.on('leave-room', () => this.handleLeaveRoom(socket));
     socket.on('offer', (data) => this.handleOffer(socket, data));
     socket.on('answer', (data) => this.handleAnswer(socket, data));
     socket.on('ice-candidate', (data) => this.handleIceCandidate(socket, data));
+    socket.on('file-transfer-init', (data, cb) => this.handleFileTransferInit(socket, data, cb));
+    socket.on('file-transfer-chunk', (data) => this.handleFileTransferChunk(socket, data));
+    socket.on('file-transfer-complete', (data) => this.handleFileTransferComplete(socket, data));
     socket.on('disconnect', () => this.handleDisconnect(socket));
   }
 
   async handleCreateRoom(socket, callback) {
     try {
-      const room = await roomService.createRoom(socket.id);
+      const room = await this.roomService.createRoom(socket.id);
       
       socket.join(room.roomId);
       this.connections.set(socket.id, {
@@ -49,7 +53,7 @@ class SignalingService {
 
   async handleJoinRoom(socket, { roomId, password }, callback) {
     try {
-      const room = await roomService.getRoom(roomId);
+      const room = await this.roomService.getRoom(roomId);
       
       if (!room) {
         callback({
@@ -67,7 +71,7 @@ class SignalingService {
         return;
       }
 
-      const result = await roomService.joinRoom(roomId, socket.id);
+      const result = await this.roomService.joinRoom(roomId, socket.id);
       
       if (!result.success) {
         callback({
@@ -111,10 +115,10 @@ class SignalingService {
     const { roomId, role } = connection;
     
     if (role === 'viewer') {
-      await roomService.leaveRoom(roomId, socket.id);
+      await this.roomService.leaveRoom(roomId, socket.id);
       
       // Notify host
-      const room = await roomService.getRoom(roomId);
+      const room = await this.roomService.getRoom(roomId);
       if (room) {
         socket.to(room.hostId).emit('viewer-left', {
           viewerId: socket.id
@@ -152,6 +156,61 @@ class SignalingService {
     });
   }
 
+  async handleFileTransferInit(socket, data, callback) {
+    try {
+      const transferId = await this.fileTransferService.initTransfer({
+        ...data,
+        from: socket.id,
+      });
+      socket.to(data.to).emit('file-transfer-init', {
+        transferId,
+        fileName: data.fileName,
+        fileSize: data.fileSize,
+        fileType: data.fileType,
+        from: socket.id,
+      });
+      if (callback) callback({ success: true, transferId });
+    } catch (error) {
+      logger.error('File transfer init error:', error);
+      if (callback) callback({ success: false, error: error.message });
+    }
+  }
+
+  async handleFileTransferChunk(socket, { transferId, chunk, to }) {
+    try {
+      await this.fileTransferService.storeChunk(transferId, chunk);
+      socket.to(to).emit('file-transfer-chunk', {
+        transferId,
+        chunk,
+        from: socket.id,
+      });
+    } catch (error) {
+      logger.error('File transfer chunk error:', error);
+      socket.emit('file-transfer-error', {
+        transferId,
+        error: error.message,
+      });
+    }
+  }
+
+  async handleFileTransferComplete(socket, { transferId, to }) {
+    try {
+      const { meta, data } = await this.fileTransferService.completeTransfer(transferId);
+      socket.to(to).emit('file-transfer-complete', {
+        transferId,
+        from: socket.id,
+        meta,
+        data,
+      });
+    } catch (error) {
+      logger.error('File transfer complete error:', error);
+      socket.emit('file-transfer-error', {
+        transferId,
+        error: error.message,
+      });
+    }
+  }
+
   async handleDisconnect(socket) {
     logger.info(`Socket disconnected: ${socket.id}`);
     
@@ -162,7 +221,7 @@ class SignalingService {
     
     if (role === 'host') {
       // Host disconnected, close the room
-      await roomService.closeRoom(roomId);
+      await this.roomService.closeRoom(roomId);
       this.io.to(roomId).emit('host-disconnected');
       
       // Disconnect all viewers
@@ -177,16 +236,17 @@ class SignalingService {
       logger.info(`Room ${roomId} closed due to host disconnect`);
     } else if (role === 'viewer') {
       // Viewer disconnected
-      await roomService.leaveRoom(roomId, socket.id);
+      await this.roomService.leaveRoom(roomId, socket.id);
       
-      const room = await roomService.getRoom(roomId);
+      const room = await this.roomService.getRoom(roomId);
       if (room) {
         socket.to(room.hostId).emit('viewer-disconnected', {
           viewerId: socket.id
         });
       }
     }
-    
+
+    await this.fileTransferService.cleanupTransfers(socket.id);
     this.connections.delete(socket.id);
   }
 }
