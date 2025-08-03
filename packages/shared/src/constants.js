@@ -29,7 +29,7 @@ module.exports = {
     // Error events
     ERROR: 'error',
     CONNECTION_ERROR: 'connection-error',
-    ROOM_ERROR: 'room-error',
+    ROOM_ERROR: 'room-error'
   },
 
   // Room constraints
@@ -39,7 +39,7 @@ module.exports = {
     PASSWORD_LENGTH: 6,
     SESSION_TIMEOUT: 3600000, // 1 hour in milliseconds
     MIN_ID: 100000000,
-    MAX_ID: 999999999,
+    MAX_ID: 999999999
   },
 
   // WebRTC constraints
@@ -48,14 +48,14 @@ module.exports = {
       MAX_WIDTH: 1920,
       MAX_HEIGHT: 1080,
       MAX_FRAMERATE: 30,
-      MIN_FRAMERATE: 15,
+      MIN_FRAMERATE: 15
     },
     AUDIO: {
       ECHO_CANCELLATION: true,
       NOISE_SUPPRESSION: true,
       AUTO_GAIN_CONTROL: true,
-      SAMPLE_RATE: 44100,
-    },
+      SAMPLE_RATE: 44100
+    }
   },
 
   // Error codes
@@ -67,7 +67,7 @@ module.exports = {
     CONNECTION_FAILED: 'CONNECTION_FAILED',
     WEBRTC_ERROR: 'WEBRTC_ERROR',
     SERVER_ERROR: 'SERVER_ERROR',
-    RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
+    RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED'
   },
 
   // Connection states
@@ -76,12 +76,12 @@ module.exports = {
     CONNECTED: 'connected',
     DISCONNECTED: 'disconnected',
     FAILED: 'failed',
-    CLOSED: 'closed',
+    CLOSED: 'closed'
   },
 
   // User roles
   ROLES: {
     HOST: 'host',
-    VIEWER: 'viewer',
-  },
+    VIEWER: 'viewer'
+  }
 };

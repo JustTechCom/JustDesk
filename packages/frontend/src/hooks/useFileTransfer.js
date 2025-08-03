@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { EVENTS } from '@justdesk/shared/src/constants';
+import { EVENTS } from '@justdesk/shared/constants';
 
 const CHUNK_SIZE = 16 * 1024; // 16KB
 
@@ -10,7 +10,9 @@ export default function useFileTransfer(socket, peers = {}) {
 
   // handle incoming messages via socket
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      return;
+    }
     const handleMessage = (message) => {
       processMessage(message);
     };
@@ -22,12 +24,14 @@ export default function useFileTransfer(socket, peers = {}) {
       socket.off(EVENTS.FILE_CHUNK, handleMessage);
       socket.off(EVENTS.FILE_COMPLETE, handleMessage);
     };
-  }, [socket]);
+  }, [socket, processMessage]);
 
   // handle incoming messages via data channels
   useEffect(() => {
     const peersArray = Object.values(peers || {});
-    if (peersArray.length === 0) return;
+    if (peersArray.length === 0) {
+      return;
+    }
     const handlers = [];
     peersArray.forEach((peer) => {
       const handler = (data) => {
@@ -47,7 +51,7 @@ export default function useFileTransfer(socket, peers = {}) {
     return () => {
       handlers.forEach(({ peer, handler }) => peer.off('data', handler));
     };
-  }, [peers]);
+  }, [peers, processMessage]);
 
   const broadcast = useCallback(
     (message) => {

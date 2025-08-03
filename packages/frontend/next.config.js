@@ -3,10 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
 
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  
   // Render.com için önemli
   output: 'standalone',
   
