@@ -9,24 +9,29 @@ module.exports = {
     ROOM_JOINED: 'room-joined',
     ROOM_LEFT: 'room-left',
     ROOM_CLOSED: 'room-closed',
-    
+
     // WebRTC events
     OFFER: 'offer',
     ANSWER: 'answer',
     ICE_CANDIDATE: 'ice-candidate',
-    
+
     // Participant events
     VIEWER_JOINED: 'viewer-joined',
     VIEWER_LEFT: 'viewer-left',
     VIEWER_DISCONNECTED: 'viewer-disconnected',
     HOST_DISCONNECTED: 'host-disconnected',
-    
+
+    // File transfer events
+    FILE_META: 'file-meta',
+    FILE_CHUNK: 'file-chunk',
+    FILE_COMPLETE: 'file-complete',
+
     // Error events
     ERROR: 'error',
     CONNECTION_ERROR: 'connection-error',
-    ROOM_ERROR: 'room-error'
+    ROOM_ERROR: 'room-error',
   },
-  
+
   // Room constraints
   ROOM: {
     MAX_VIEWERS: 10,
@@ -34,25 +39,25 @@ module.exports = {
     PASSWORD_LENGTH: 6,
     SESSION_TIMEOUT: 3600000, // 1 hour in milliseconds
     MIN_ID: 100000000,
-    MAX_ID: 999999999
+    MAX_ID: 999999999,
   },
-  
+
   // WebRTC constraints
   WEBRTC: {
     VIDEO: {
       MAX_WIDTH: 1920,
       MAX_HEIGHT: 1080,
       MAX_FRAMERATE: 30,
-      MIN_FRAMERATE: 15
+      MIN_FRAMERATE: 15,
     },
     AUDIO: {
       ECHO_CANCELLATION: true,
       NOISE_SUPPRESSION: true,
       AUTO_GAIN_CONTROL: true,
-      SAMPLE_RATE: 44100
-    }
+      SAMPLE_RATE: 44100,
+    },
   },
-  
+
   // Error codes
   ERROR_CODES: {
     ROOM_NOT_FOUND: 'ROOM_NOT_FOUND',
@@ -62,21 +67,21 @@ module.exports = {
     CONNECTION_FAILED: 'CONNECTION_FAILED',
     WEBRTC_ERROR: 'WEBRTC_ERROR',
     SERVER_ERROR: 'SERVER_ERROR',
-    RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED'
+    RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
   },
-  
+
   // Connection states
   CONNECTION_STATES: {
     CONNECTING: 'connecting',
     CONNECTED: 'connected',
     DISCONNECTED: 'disconnected',
     FAILED: 'failed',
-    CLOSED: 'closed'
+    CLOSED: 'closed',
   },
-  
+
   // User roles
   ROLES: {
     HOST: 'host',
-    VIEWER: 'viewer'
-  }
+    VIEWER: 'viewer',
+  },
 };
