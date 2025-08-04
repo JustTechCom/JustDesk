@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Shared utilities and types for JustDesk",
   "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./constants": "./src/constants.js"
+  },
   "scripts": {
     "test": "jest"
   },

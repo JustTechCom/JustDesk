@@ -22,7 +22,12 @@
     "postcss": "^8.4.31",
     "eslint": "^8.53.0",
     "eslint-config-next": "^14.0.0",
-    "recharts": "^2.7.2"
+    "recharts": "^2.7.2",
+    "@justdesk/shared": "^1.0.0"
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0"
   },
   "engines": {
     "node": "18.x"
