@@ -6,17 +6,18 @@ export default function useWebRTC(socket) {
   const [remoteStream, setRemoteStream] = useState(null);
   const [peers, setPeers] = useState({});
   const peersRef = useRef({});
-
+ 
   const startScreenShare = async (useCamera = false, useMicrophone = false) => {
     try {
       // Always capture the screen
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
+ 
         video: {
           cursor: 'always',
           width: { ideal: 1920 },
           height: { ideal: 1080 },
           frameRate: { ideal: 30 }
-        },
+        }, 
         audio: false
       });
 
@@ -40,11 +41,13 @@ export default function useWebRTC(socket) {
 
       // Handle stream end
       displayStream.getVideoTracks()[0].onended = () => {
+ 
         stopScreenShare();
       };
 
-      console.log('🎥 Screen share started successfully');
+      console.log('🎥 Screen share started successfully'); 
       return displayStream;
+ 
     } catch (error) {
       console.error('❌ Error starting screen share:', error);
       throw error;

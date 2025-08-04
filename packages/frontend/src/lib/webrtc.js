@@ -12,7 +12,7 @@ class WebRTCService {
     };
   }
 
-  async startScreenCapture(options = {}) {
+  async startScreenCapture(options = {}, mediaOptions = {}) {
     const defaultOptions = {
       video: {
         cursor: 'always',
@@ -27,14 +27,32 @@ class WebRTCService {
       }
     };
 
+    const { withCamera = false, withMic = false } = mediaOptions;
+
     try {
-      this.localStream = await navigator.mediaDevices.getDisplayMedia({
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
         ...defaultOptions,
         ...options
       });
 
+      let tracks = [...screenStream.getTracks()];
+
+      if (withCamera || withMic) {
+        try {
+          const userStream = await navigator.mediaDevices.getUserMedia({
+            video: withCamera,
+            audio: withMic
+          });
+          tracks = [...tracks, ...userStream.getTracks()];
+        } catch (err) {
+          console.error('Failed to get user media:', err);
+        }
+      }
+
+      this.localStream = new MediaStream(tracks);
+
       // Add ended event listener
-      this.localStream.getVideoTracks()[0].addEventListener('ended', () => {
+      screenStream.getVideoTracks()[0].addEventListener('ended', () => {
         this.stopScreenCapture();
       });
 
