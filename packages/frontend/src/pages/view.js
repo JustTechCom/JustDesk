@@ -4,7 +4,6 @@ import Head from 'next/head';
 import { Monitor, Loader, XCircle, Maximize, Volume2 } from 'lucide-react';
 import Layout from '../components/Layout';
 import RemoteViewer from '../components/RemoteViewer';
-import FileTransfer from '../components/FileTransfer';
 import useWebRTC from '../hooks/useWebRTC';
 import useSocket from '../hooks/useSocket';
 
@@ -20,7 +19,7 @@ export default function ViewScreen() {
   const [nicknameSubmitted, setNicknameSubmitted] = useState(false);
 
   const { socket } = useSocket();
-  const { remoteStream, peers } = useWebRTC(socket);
+  const { remoteStream } = useWebRTC(socket);
 
   // Handle router query in useEffect to avoid SSR issues
   useEffect(() => {
@@ -184,7 +183,6 @@ export default function ViewScreen() {
           ) : (
             <>
               <RemoteViewer stream={remoteStream} connected={connected} roomId={roomId} />
-              <FileTransfer socket={socket} peers={peers} />
             </>
           )}
         </div>

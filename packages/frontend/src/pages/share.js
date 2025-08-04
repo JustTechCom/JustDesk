@@ -5,7 +5,6 @@ import { Wifi, Users, AlertCircle, Monitor, Clock } from 'lucide-react';
 import Layout from '../components/Layout';
 import ScreenShare from '../components/ScreenShare';
 import ConnectionPanel from '../components/ConnectionPanel';
-import FileTransfer from '../components/FileTransfer';
 import useWebRTC from '../hooks/useWebRTC';
 import useSocket from '../hooks/useSocket';
 import ViewerChart from '../components/ViewerChart';
@@ -24,7 +23,7 @@ export default function ShareScreen() {
   const [viewerStats, setViewerStats] = useState([]);
 
   const { socket, connected } = useSocket();
-  const { startScreenShare, stopScreenShare, stream, peers } = useWebRTC(socket);
+  const { startScreenShare, stopScreenShare, stream } = useWebRTC(socket);
 
   useEffect(() => {
     if (connected && !roomId && !isCreatingRoom) {
@@ -337,7 +336,6 @@ export default function ShareScreen() {
                   sharingStartTime={sharingStartTime}
                 />
                 <ViewerChart data={viewerStats} />
-                <FileTransfer socket={socket} peers={peers} />
               </div>
             </div>
           </div>
