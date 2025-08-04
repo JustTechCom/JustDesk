@@ -21,6 +21,8 @@ export default function ShareScreen() {
   const [sharingStartTime, setSharingStartTime] = useState(null); // Actual sharing start
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [viewerStats, setViewerStats] = useState([]);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
 
   const { socket, connected } = useSocket();
   const { startScreenShare, stopScreenShare, stream } = useWebRTC(socket);
@@ -104,7 +106,7 @@ export default function ShareScreen() {
   const handleStartShare = async () => {
     try {
       console.log('🎥 Starting screen share...');
-      await startScreenShare();
+      await startScreenShare(cameraEnabled, microphoneEnabled);
 
       // Sharing başladığında timer'ı başlat
       const shareStartTime = Date.now();
@@ -324,6 +326,10 @@ export default function ShareScreen() {
                   onStartShare={handleStartShare}
                   onStopShare={handleStopShare}
                   error={error}
+                  cameraEnabled={cameraEnabled}
+                  microphoneEnabled={microphoneEnabled}
+                  onToggleCamera={() => setCameraEnabled(prev => !prev)}
+                  onToggleMicrophone={() => setMicrophoneEnabled(prev => !prev)}
                 />
               </div>
 
