@@ -1,4 +1,4 @@
-module.exports = {
+module.exports = { 
   ...require('./constants'),
-  types: require('./types')
+  types: require('./types') 
 };

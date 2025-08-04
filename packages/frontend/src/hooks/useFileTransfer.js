@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react'; 
 import { EVENTS } from '@justdesk/shared/constants';
+ 
 
 const CHUNK_SIZE = 16 * 1024; // 16KB
 
@@ -7,7 +8,7 @@ export default function useFileTransfer(socket, peers = {}) {
   const [progress, setProgress] = useState(0);
   const [receivedFiles, setReceivedFiles] = useState([]);
   const incomingFiles = useRef({});
-
+ 
   const processMessage = useCallback((message) => {
     const { type, id, name, size, data } = message;
     if (type === 'meta') {
@@ -29,9 +30,10 @@ export default function useFileTransfer(socket, peers = {}) {
         setReceivedFiles((prev) => [...prev, { id, name: fileData.name, url }]);
         delete incomingFiles.current[id];
       }
-    }
+    } 
   }, []);
 
+ 
   // handle incoming messages via socket
   useEffect(() => {
     if (!socket) {
@@ -129,8 +131,8 @@ export default function useFileTransfer(socket, peers = {}) {
       };
       readSlice();
     },
-    [broadcast]
+    [broadcast] 
   );
-
+ 
   return { sendFile, progress, receivedFiles };
 }

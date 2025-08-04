@@ -59,6 +59,22 @@ const WebRTCTypes = {
   }
 };
 
+// File transfer types
+const FileTransferTypes = {
+  FileMetadata: {
+    name: 'string',
+    size: 'number',
+    mimeType: 'string'
+  },
+
+  FileChunk: {
+    metadata: 'FileMetadata',
+    data: 'ArrayBuffer',
+    chunkIndex: 'number',
+    totalChunks: 'number'
+  }
+};
+
 // API Response types
 const ResponseTypes = {
   SuccessResponse: {
@@ -79,5 +95,6 @@ module.exports = {
   RoomTypes,
   ConnectionTypes,
   WebRTCTypes,
-  ResponseTypes
+  ResponseTypes,
+  FileTransferTypes
 };
