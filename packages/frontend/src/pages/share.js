@@ -101,10 +101,10 @@ export default function ShareScreen() {
     });
   };
 
-  const handleStartShare = async () => {
+  const handleStartShare = async (mediaOptions = {}) => {
     try {
       console.log('🎥 Starting screen share...');
-      await startScreenShare();
+      await startScreenShare(mediaOptions);
 
       // Sharing başladığında timer'ı başlat
       const shareStartTime = Date.now();

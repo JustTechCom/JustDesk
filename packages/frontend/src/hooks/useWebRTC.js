@@ -7,9 +7,9 @@ export default function useWebRTC(socket) {
   const [peers, setPeers] = useState({});
   const peersRef = useRef({});
 
-  const startScreenShare = async () => {
+  const startScreenShare = async ({ withCamera = false, withMic = false } = {}) => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           cursor: 'always',
           width: { ideal: 1920 },
@@ -23,15 +23,30 @@ export default function useWebRTC(socket) {
         }
       });
 
-      setLocalStream(stream);
+      let tracks = [...screenStream.getTracks()];
+
+      if (withCamera || withMic) {
+        try {
+          const userStream = await navigator.mediaDevices.getUserMedia({
+            video: withCamera,
+            audio: withMic
+          });
+          tracks = [...tracks, ...userStream.getTracks()];
+        } catch (err) {
+          console.error('❌ Error accessing camera/microphone:', err);
+        }
+      }
+
+      const combinedStream = new MediaStream(tracks);
+      setLocalStream(combinedStream);
 
       // Handle stream end
-      stream.getVideoTracks()[0].onended = () => {
+      screenStream.getVideoTracks()[0].onended = () => {
         stopScreenShare();
       };
 
       console.log('🎥 Screen share started successfully');
-      return stream;
+      return combinedStream;
     } catch (error) {
       console.error('❌ Error starting screen share:', error);
       throw error;
