@@ -114,21 +114,25 @@ class RoomService {
     const sharingStartTime = room.sharingStartTime;
     const upperBound = sharingStartTime + 60 * 60 * 1000;
     const rawEvents = await this.redis.zrangebyscore(eventsKey, sharingStartTime, upperBound);
-    const events = rawEvents.map((e) => JSON.parse(e)).sort((a, b) => a.timestamp - b.timestamp);
+    const events = rawEvents
+      .map((e) => JSON.parse(e))
+      .sort((a, b) => a.timestamp - b.timestamp);
 
     const stats = [];
     let viewerCount = 0;
-    let index = 0;
-    for (let i = 0; i < 60; i++) {
-      const end = sharingStartTime + (i + 1) * 60 * 1000;
-      const minuteEvents = [];
-      while (index < events.length && events[index].timestamp < end) {
-        viewerCount += events[index].action === 'join' ? 1 : -1;
-        minuteEvents.push({ nickname: events[index].nickname, action: events[index].action });
-        index++;
-      }
-      stats.push({ timestamp: end, count: viewerCount, events: minuteEvents });
+
+    // Initial data point with zero viewers at sharing start
+    stats.push({ timestamp: sharingStartTime, count: 0 });
+
+    for (const event of events) {
+      viewerCount += event.action === 'join' ? 1 : -1;
+      stats.push({
+        timestamp: event.timestamp,
+        count: viewerCount,
+        event: { nickname: event.nickname, action: event.action },
+      });
     }
+
     return stats;
   }
 
