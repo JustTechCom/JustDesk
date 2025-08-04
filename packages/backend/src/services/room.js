@@ -120,16 +120,24 @@ class RoomService {
 
     const stats = [];
     let viewerCount = 0;
+    const currentViewers = new Map();
 
     // Initial data point with zero viewers at sharing start
-    stats.push({ timestamp: sharingStartTime, count: 0 });
+    stats.push({ timestamp: sharingStartTime, count: 0, events: [], viewers: [] });
 
     for (const event of events) {
-      viewerCount += event.action === 'join' ? 1 : -1;
+      if (event.action === 'join') {
+        viewerCount += 1;
+        currentViewers.set(event.viewerId, event.nickname);
+      } else {
+        viewerCount -= 1;
+        currentViewers.delete(event.viewerId);
+      }
       stats.push({
         timestamp: event.timestamp,
         count: viewerCount,
-        event: { nickname: event.nickname, action: event.action },
+        events: [{ nickname: event.nickname, action: event.action }],
+        viewers: Array.from(currentViewers.values()),
       });
     }
 
