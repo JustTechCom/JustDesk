@@ -7,7 +7,7 @@ export default function useFileTransfer(socket, peers = {}) {
   const [progress, setProgress] = useState(0);
   const [receivedFiles, setReceivedFiles] = useState([]);
   const incomingFiles = useRef({});
-
+ 
   const processMessage = useCallback((message) => {
     const { type, id, name, size, data } = message;
     if (type === 'meta') {
@@ -30,8 +30,7 @@ export default function useFileTransfer(socket, peers = {}) {
         delete incomingFiles.current[id];
       }
     }
-  }, []);
-
+  }, []); 
   // handle incoming messages via socket
   useEffect(() => {
     if (!socket) {
@@ -130,7 +129,6 @@ export default function useFileTransfer(socket, peers = {}) {
       readSlice();
     },
     [broadcast]
-  );
-
+  ); 
   return { sendFile, progress, receivedFiles };
 }
