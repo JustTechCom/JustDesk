@@ -47,6 +47,7 @@ export default function ShareScreen() {
             }),
             count: s.count,
             events: s.events,
+            viewers: s.viewers,
           }));
           setViewerStats(formatted);
         })
@@ -61,6 +62,7 @@ export default function ShareScreen() {
         time: new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         count: s.count,
         events: s.events,
+        viewers: s.viewers,
       }));
       setViewerStats(formatted);
     };

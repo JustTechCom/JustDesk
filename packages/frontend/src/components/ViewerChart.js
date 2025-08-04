@@ -10,7 +10,7 @@ import {
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
-    const { count, events } = payload[0].payload;
+    const { count, events, viewers } = payload[0].payload;
     return (
       <div className="bg-gray-800 p-2 rounded text-white text-sm">
         <p className="font-semibold">{label}</p>
@@ -24,6 +24,14 @@ const CustomTooltip = ({ active, payload, label }) => {
             ))}
           </div>
         )}
+        {viewers && viewers.length > 0 && (
+          <div className="mt-2">
+            <div className="font-semibold">Currently present</div>
+            {viewers.map((v, i) => (
+              <div key={i}>{v || 'Anon'}</div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -34,7 +42,7 @@ export default function ViewerChart({ data = [] }) {
   const chartData =
     data.length > 0 && data[0].count === 0
       ? data
-      : [{ time: data[0]?.time ?? '', count: 0 }, ...data];
+      : [{ time: data[0]?.time ?? '', count: 0, events: [], viewers: [] }, ...data];
 
   return (
     <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/20 h-64">
