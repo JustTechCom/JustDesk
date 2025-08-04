@@ -6,47 +6,48 @@ export default function useWebRTC(socket) {
   const [remoteStream, setRemoteStream] = useState(null);
   const [peers, setPeers] = useState({});
   const peersRef = useRef({});
-
-  const startScreenShare = async ({ withCamera = false, withMic = false } = {}) => {
+ 
+  const startScreenShare = async (useCamera = false, useMicrophone = false) => {
     try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+      // Always capture the screen
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+ 
         video: {
           cursor: 'always',
           width: { ideal: 1920 },
           height: { ideal: 1080 },
           frameRate: { ideal: 30 }
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 44100
-        }
+        }, 
+        audio: false
       });
 
-      let tracks = [...screenStream.getTracks()];
-
-      if (withCamera || withMic) {
+      // Optionally capture camera and/or microphone
+      if (useCamera || useMicrophone) {
         try {
           const userStream = await navigator.mediaDevices.getUserMedia({
-            video: withCamera,
-            audio: withMic
+            video: useCamera,
+            audio: useMicrophone
           });
-          tracks = [...tracks, ...userStream.getTracks()];
+
+          userStream.getTracks().forEach(track => {
+            displayStream.addTrack(track);
+          });
         } catch (err) {
-          console.error('❌ Error accessing camera/microphone:', err);
+          console.error('❌ Error getting user media:', err);
         }
       }
 
-      const combinedStream = new MediaStream(tracks);
-      setLocalStream(combinedStream);
+      setLocalStream(displayStream);
 
       // Handle stream end
-      screenStream.getVideoTracks()[0].onended = () => {
+      displayStream.getVideoTracks()[0].onended = () => {
+ 
         stopScreenShare();
       };
 
-      console.log('🎥 Screen share started successfully');
-      return combinedStream;
+      console.log('🎥 Screen share started successfully'); 
+      return displayStream;
+ 
     } catch (error) {
       console.error('❌ Error starting screen share:', error);
       throw error;

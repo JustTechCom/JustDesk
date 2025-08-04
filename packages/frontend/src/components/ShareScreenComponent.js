@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Head from 'next/head';
 import { Monitor, Copy, CheckCircle, XCircle, Users, Wifi, AlertCircle } from 'lucide-react';
 import Layout from './Layout';
 import ScreenShare from './ScreenShare';
@@ -14,10 +15,12 @@ export default function ShareScreenComponent() {
   const [isSharing, setIsSharing] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [error, setError] = useState('');
-  const [connectionError, setConnectionError] = useState(''); 
+  const [connectionError, setConnectionError] = useState('');
   const [sessionStartTime, setSessionStartTime] = useState(null); // Room creation time
   const [sharingStartTime, setSharingStartTime] = useState(null); // Actual sharing start time
-  const [isCreatingRoom, setIsCreatingRoom] = useState(false); 
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   
   const { socket, connected } = useSocket();
   const { startScreenShare, stopScreenShare, stream } = useWebRTC(socket);
@@ -62,11 +65,11 @@ export default function ShareScreenComponent() {
       }
     });
   };
-
-  const handleStartShare = async (mediaOptions = {}) => {
+ 
+  const handleStartShare = async () => {
     try {
       console.log('🎥 Starting screen share...');
-      await startScreenShare(mediaOptions);
+      await startScreenShare(cameraEnabled, microphoneEnabled); 
       
       // Screen sharing başladığında timer'ı başlat
       const shareStartTime = Date.now();
@@ -265,6 +268,10 @@ export default function ShareScreenComponent() {
                   onStartShare={handleStartShare}
                   onStopShare={handleStopShare}
                   error={error}
+                  cameraEnabled={cameraEnabled}
+                  microphoneEnabled={microphoneEnabled}
+                  onToggleCamera={() => setCameraEnabled(prev => !prev)}
+                  onToggleMicrophone={() => setMicrophoneEnabled(prev => !prev)}
                 />
               </div>
 
