@@ -7,7 +7,30 @@ export default function useFileTransfer(socket, peers = {}) {
   const [progress, setProgress] = useState(0);
   const [receivedFiles, setReceivedFiles] = useState([]);
   const incomingFiles = useRef({});
-
+ 
+  const processMessage = useCallback((message) => {
+    const { type, id, name, size, data } = message;
+    if (type === 'meta') {
+      incomingFiles.current[id] = { name, size, chunks: [] };
+    } else if (type === 'chunk') {
+      if (incomingFiles.current[id]) {
+        incomingFiles.current[id].chunks.push(data);
+      }
+    } else if (type === 'complete') {
+      const fileData = incomingFiles.current[id];
+      if (fileData) {
+        const binaryString = atob(fileData.chunks.join(''));
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const url = URL.createObjectURL(new Blob([bytes]));
+        setReceivedFiles((prev) => [...prev, { id, name: fileData.name, url }]);
+        delete incomingFiles.current[id];
+      }
+    }
+  }, []); 
   // handle incoming messages via socket
   useEffect(() => {
     if (!socket) {
@@ -106,31 +129,6 @@ export default function useFileTransfer(socket, peers = {}) {
       readSlice();
     },
     [broadcast]
-  );
-
-  const processMessage = useCallback((message) => {
-    const { type, id, name, size, data } = message;
-    if (type === 'meta') {
-      incomingFiles.current[id] = { name, size, chunks: [] };
-    } else if (type === 'chunk') {
-      if (incomingFiles.current[id]) {
-        incomingFiles.current[id].chunks.push(data);
-      }
-    } else if (type === 'complete') {
-      const fileData = incomingFiles.current[id];
-      if (fileData) {
-        const binaryString = atob(fileData.chunks.join(''));
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const url = URL.createObjectURL(new Blob([bytes]));
-        setReceivedFiles((prev) => [...prev, { id, name: fileData.name, url }]);
-        delete incomingFiles.current[id];
-      }
-    }
-  }, []);
-
+  ); 
   return { sendFile, progress, receivedFiles };
 }
