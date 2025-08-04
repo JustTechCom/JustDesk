@@ -15,21 +15,11 @@ module.exports = {
     ANSWER: 'answer',
     ICE_CANDIDATE: 'ice-candidate',
 
-    // File transfer events
-    FILE_TRANSFER_INIT: 'file-transfer-init',
-    FILE_TRANSFER_CHUNK: 'file-transfer-chunk',
-    FILE_TRANSFER_COMPLETE: 'file-transfer-complete',
-    
     // Participant events
     VIEWER_JOINED: 'viewer-joined',
     VIEWER_LEFT: 'viewer-left',
     VIEWER_DISCONNECTED: 'viewer-disconnected',
     HOST_DISCONNECTED: 'host-disconnected',
-
-    // File transfer events
-    FILE_META: 'file-meta',
-    FILE_CHUNK: 'file-chunk',
-    FILE_COMPLETE: 'file-complete',
 
     // Error events
     ERROR: 'error',
