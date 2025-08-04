@@ -116,7 +116,7 @@ class RoomService {
     const rawEvents = await this.redis.zrangebyscore(eventsKey, sharingStartTime, upperBound);
     const events = rawEvents.map((e) => JSON.parse(e)).sort((a, b) => a.timestamp - b.timestamp);
 
-    let stats = [];
+    const stats = [];
     let viewerCount = 0;
     let index = 0;
     for (let i = 0; i < 60; i++) {

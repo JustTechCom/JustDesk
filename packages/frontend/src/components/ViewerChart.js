@@ -30,17 +30,22 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function ViewerChart({ data }) {
+export default function ViewerChart({ data = [] }) {
+  const chartData =
+    data.length > 0 && data[0].count === 0
+      ? data
+      : [{ time: data[0]?.time ?? '', count: 0 }, ...data];
+
   return (
     <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/20 h-64">
       <h3 className="text-lg font-semibold text-white mb-4">Viewer Analytics (first hour)</h3>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
+        <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#555" />
           <XAxis dataKey="time" stroke="#fff" />
           <YAxis allowDecimals={false} stroke="#fff" />
           <Tooltip content={<CustomTooltip />} />
-          <Line type="monotone" dataKey="count" stroke="#3b82f6" dot={false} />
+          <Line type="stepAfter" dataKey="count" stroke="#3b82f6" dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>
