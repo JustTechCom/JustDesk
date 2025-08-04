@@ -25,6 +25,10 @@
     "recharts": "^2.7.2",
     "@justdesk/shared": "^1.0.0"
   },
+  "devDependencies": {
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0"
+  },
   "engines": {
     "node": "18.x"
   }
