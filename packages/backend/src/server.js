@@ -9,6 +9,8 @@ const compression = require('compression');
 const config = require('./config');
 const crypto = require('crypto');
 const RoomService = require('./services/room');
+const SignalingService = require('./services/signaling');
+const FileTransferService = require('./services/fileTransfer');
 
 const app = express();
 const httpServer = createServer(app);
@@ -178,6 +180,9 @@ const io = new Server(httpServer, {
 const connections = new Map();
 const connectionRates = new Map(); // IP-based connection tracking
 
+const fileTransferService = new FileTransferService(redis);
+const signalingService = new SignalingService(io, redis, fileTransferService, roomService);
+
 // Helper functions
 function generateRoomId() {
   return crypto.randomInt(100000000, 999999999).toString();
@@ -319,399 +324,8 @@ io.use((socket, next) => {
   next();
 });
 
-// Socket.IO connection handling - COMPLETE VERSION
-io.on('connection', (socket) => {
-  console.log(`✅ New socket connection: ${socket.id}`);
-
-  // Test Redis connection on each socket connection
-  socket.emit('server-status', { connected: true });
-
-  // CREATE ROOM EVENT
-  socket.on('create-room', async (callback) => {
-    console.log(`🏠 Creating room for socket: ${socket.id}`);
-
-    try {
-      // Check if Redis is available (use cached status)
-      const redisStatus = await getRedisHealth();
-      if (redisStatus.includes('error')) {
-        throw new Error('Redis not available');
-      }
-
-      const roomId = generateRoomId();
-      const password = generatePassword();
-      const now = Date.now();
-
-      console.log(`🎲 Generated Room ID: ${roomId}, Password: ${password}`);
-
-      const roomData = {
-        hostId: socket.id,
-        roomId,
-        password,
-        created: now,
-        sessionStartTime: now,
-        participants: [], // Boş array ile başla
-        lastActivity: now,
-        isSharing: false,
-        sharingStartTime: null,
-      };
-
-      // Store in Redis with expiration
-      const key = `room:${roomId}`;
-      await redis.setex(key, 3600, JSON.stringify(roomData));
-
-      console.log(`💾 Room data stored in Redis with key: ${key}`);
-
-      // Join socket room
-      socket.join(roomId);
-      connections.set(socket.id, {
-        roomId,
-        role: 'host',
-        connectedAt: now,
-        sessionStartTime: now,
-      });
-
-      console.log(`✅ Room created successfully: ${roomId}`);
-
-      // Send response
-      if (callback && typeof callback === 'function') {
-        callback({
-          success: true,
-          roomId,
-          password,
-          sessionStartTime: now,
-        });
-      } else {
-        socket.emit('room-created', {
-          success: true,
-          roomId,
-          password,
-          sessionStartTime: now,
-        });
-      }
-    } catch (error) {
-      console.error('❌ Error creating room:', error);
-
-      const errorResponse = {
-        success: false,
-        error: 'Failed to create room: ' + error.message,
-      };
-
-      if (callback && typeof callback === 'function') {
-        callback(errorResponse);
-      } else {
-        socket.emit('room-creation-error', errorResponse);
-      }
-    }
-  });
-
-  // JOIN ROOM EVENT
-  socket.on('join-room', async ({ roomId, password, nickname }, callback) => {
-    console.log(`🚪 Joining room ${roomId} for socket: ${socket.id}`);
-
-    if (!roomId || !password || !/^\d{9}$/.test(roomId)) {
-      callback({ success: false, error: 'Invalid room ID or password format' });
-      return;
-    }
-
-    try {
-      const room = await roomService.getRoom(roomId);
-      if (!room) {
-        console.log(`❌ Room not found: ${roomId}`);
-        callback({ success: false, error: 'Room not found' });
-        return;
-      }
-
-      if (room.password !== password) {
-        console.log(`❌ Invalid password for room: ${roomId}`);
-        callback({ success: false, error: 'Invalid password' });
-        return;
-      }
-
-      const result = await roomService.joinRoom(roomId, socket.id, nickname);
-      if (!result.success) {
-        callback({ success: false, error: result.error });
-        return;
-      }
-
-      socket.join(roomId);
-      connections.set(socket.id, {
-        roomId,
-        role: 'viewer',
-        connectedAt: Date.now(),
-        nickname: nickname || '',
-      });
-
-      const updatedRoom = await roomService.getRoom(roomId);
-
-      socket.to(updatedRoom.hostId).emit('viewer-joined', {
-        viewerId: socket.id,
-        nickname: nickname || '',
-        roomId,
-        requestStream: true,
-        joinedAt: Date.now(),
-        totalViewers: updatedRoom.participants.length,
-      });
-
-      socket.to(roomId).emit('participant-update', {
-        type: 'joined',
-        viewerId: socket.id,
-        nickname: nickname || '',
-        totalViewers: updatedRoom.participants.length,
-      });
-
-      const stats = await roomService.getViewerStats(roomId);
-      io.to(roomId).emit('viewer-stats', stats);
-
-      console.log(
-        `✅ Viewer ${socket.id} joined room ${roomId}. Total viewers: ${updatedRoom.participants.length}`
-      );
-      callback({ success: true, hostId: updatedRoom.hostId });
-    } catch (error) {
-      console.error('❌ Error joining room:', error);
-      callback({ success: false, error: 'Failed to join room: ' + error.message });
-    }
-  });
-
-  // SHARING STARTED EVENT
-  socket.on('sharing-started', async ({ roomId, startTime }) => {
-    console.log(
-      `🎥 Screen sharing started in room ${roomId} at ${new Date(startTime).toLocaleTimeString()}`
-    );
-
-    try {
-      const roomData = await redis.get(`room:${roomId}`);
-      if (roomData) {
-        const room = JSON.parse(roomData);
-
-        // Room data'ya sharing start time ekle
-        room.sharingStartTime = startTime;
-        room.isSharing = true;
-        room.lastActivity = Date.now();
-
-        await redis.setex(`room:${roomId}`, 3600, JSON.stringify(room));
-
-        // Tüm viewer'lara sharing başladığını bildir
-        socket.to(roomId).emit('host-started-sharing', {
-          startTime,
-          message: 'Host started sharing their screen',
-        });
-
-        console.log(`✅ Updated room ${roomId} with sharing start time`);
-      }
-    } catch (error) {
-      console.error('❌ Error updating sharing start time:', error);
-    }
-  });
-
-  // SHARING STOPPED EVENT
-  socket.on('sharing-stopped', async ({ roomId, stopTime }) => {
-    console.log(
-      `🛑 Screen sharing stopped in room ${roomId} at ${new Date(stopTime).toLocaleTimeString()}`
-    );
-
-    try {
-      const roomData = await redis.get(`room:${roomId}`);
-      if (roomData) {
-        const room = JSON.parse(roomData);
-
-        // Calculate session duration
-        const sessionDuration = room.sharingStartTime ? stopTime - room.sharingStartTime : 0;
-
-        // Room data'yı güncelle
-        room.sharingStopTime = stopTime;
-        room.isSharing = false;
-        room.sessionDuration = sessionDuration;
-        room.lastActivity = Date.now();
-
-        await redis.setex(`room:${roomId}`, 3600, JSON.stringify(room));
-
-        // Tüm viewer'lara sharing durduğunu bildir
-        socket.to(roomId).emit('host-stopped-sharing', {
-          stopTime,
-          sessionDuration,
-          message: 'Host stopped sharing their screen',
-        });
-
-        console.log(
-          `✅ Session duration: ${Math.floor(sessionDuration / 1000 / 60)}:${Math.floor((sessionDuration / 1000) % 60)} minutes`
-        );
-      }
-    } catch (error) {
-      console.error('❌ Error updating sharing stop time:', error);
-    }
-  });
-
-  // WebRTC signaling with input validation
-  socket.on('offer', ({ offer, to }) => {
-    if (!offer || !to || typeof to !== 'string') return;
-
-    console.log(`📡 Forwarding offer from ${socket.id} to ${to}`);
-    socket.to(to).emit('offer', { offer, from: socket.id });
-  });
-
-  socket.on('answer', ({ answer, to }) => {
-    if (!answer || !to || typeof to !== 'string') return;
-
-    console.log(`📡 Forwarding answer from ${socket.id} to ${to}`);
-    socket.to(to).emit('answer', { answer, from: socket.id });
-  });
-
-  socket.on('ice-candidate', ({ candidate, to }) => {
-    if (!candidate || !to || typeof to !== 'string') return;
-
-    socket.to(to).emit('ice-candidate', { candidate, from: socket.id });
-  });
-
-  // DEBUG: Get room status
-  socket.on('get-room-status', async (roomId, callback) => {
-    try {
-      const roomData = await redis.get(`room:${roomId}`);
-      if (roomData) {
-        const room = JSON.parse(roomData);
-        callback({
-          success: true,
-          data: {
-            roomId: room.roomId,
-            participantCount: room.participants.length,
-            participants: room.participants,
-            created: room.created,
-            sessionStartTime: room.sessionStartTime,
-            lastActivity: room.lastActivity,
-            isSharing: room.isSharing || false,
-            sharingStartTime: room.sharingStartTime,
-          },
-        });
-      } else {
-        callback({ success: false, error: 'Room not found' });
-      }
-    } catch (error) {
-      callback({ success: false, error: error.message });
-    }
-  });
-
-  // DEBUG: Get sharing stats
-  socket.on('get-sharing-stats', async (roomId, callback) => {
-    try {
-      const roomData = await redis.get(`room:${roomId}`);
-      if (roomData) {
-        const room = JSON.parse(roomData);
-
-        const stats = {
-          roomId: room.roomId,
-          isSharing: room.isSharing || false,
-          sharingStartTime: room.sharingStartTime,
-          sharingStopTime: room.sharingStopTime,
-          sessionDuration: room.sessionDuration,
-          participantCount: room.participants.length,
-          created: room.created,
-          lastActivity: room.lastActivity,
-        };
-
-        // Eğer şu anda sharing aktifse, current duration'ı hesapla
-        if (room.isSharing && room.sharingStartTime) {
-          stats.currentDuration = Date.now() - room.sharingStartTime;
-        }
-
-        callback({ success: true, stats });
-      } else {
-        callback({ success: false, error: 'Room not found' });
-      }
-    } catch (error) {
-      callback({ success: false, error: error.message });
-    }
-  });
-
-  // PING endpoint for connection health
-  socket.on('ping', (callback) => {
-    if (callback && typeof callback === 'function') {
-      callback({ pong: true, timestamp: Date.now() });
-    }
-  });
-
-  // DISCONNECT EVENT
-  socket.on('disconnect', async () => {
-    console.log(`👋 Socket disconnected: ${socket.id}`);
-
-    const connection = connections.get(socket.id);
-    if (!connection) return;
-
-    const { roomId, role } = connection;
-
-    try {
-      if (role === 'host') {
-        // Host disconnected, close room and notify all viewers
-        console.log(`🏠 Host ${socket.id} disconnected from room ${roomId}`);
-
-        // Get room data before deletion
-        const roomData = await redis.get(`room:${roomId}`);
-        if (roomData) {
-          const room = JSON.parse(roomData);
-          console.log(`📢 Notifying ${room.participants.length} viewers about host disconnect`);
-        }
-
-        // Delete room from Redis
-        await roomService.closeRoom(roomId);
-
-        // Notify all viewers in the room
-        socket.to(roomId).emit('host-disconnected');
-
-        // Clean up all viewer connections from this room
-        const roomConnections = Array.from(connections.entries()).filter(
-          ([_, conn]) => conn.roomId === roomId
-        );
-
-        roomConnections.forEach(([socketId]) => {
-          connections.delete(socketId);
-          console.log(`🧹 Cleaned up connection: ${socketId}`);
-        });
-
-        console.log(`🏠 Room ${roomId} closed completely`);
-      } else if (role === 'viewer') {
-        const nick = connection.nickname || '';
-        console.log(`👤 Viewer ${socket.id} disconnected from room ${roomId}`);
-
-        await roomService.leaveRoom(roomId, socket.id, nick);
-        const room = await roomService.getRoom(roomId);
-
-        if (room) {
-          console.log(`📊 Participant count changed: ${room.participants.length}`);
-
-          console.log(`📢 Notifying host ${room.hostId} about viewer ${socket.id} disconnect`);
-          socket.to(room.hostId).emit('viewer-disconnected', {
-            viewerId: socket.id,
-            nickname: nick,
-            totalViewers: room.participants.length,
-          });
-
-          socket.to(roomId).emit('participant-update', {
-            type: 'left',
-            viewerId: socket.id,
-            nickname: nick,
-            totalViewers: room.participants.length,
-          });
-
-          const stats = await roomService.getViewerStats(roomId);
-          io.to(roomId).emit('viewer-stats', stats);
-
-          console.log(
-            `✅ Viewer ${socket.id} removed. Remaining viewers: ${room.participants.length}`
-          );
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error handling disconnect:', error);
-    }
-
-    connections.delete(socket.id);
-  });
-
-  // Ping endpoint for connection health
-  socket.on('ping', (callback) => {
-    if (callback && typeof callback === 'function') {
-      callback({ pong: true, timestamp: Date.now() });
-    }
-  });
-});
+// Socket.IO connection handling
+io.on('connection', (socket) => signalingService.handleConnection(socket));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -838,7 +452,8 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM received, shutting down gracefully');
   clearInterval(connectionRateCleanup);
-  httpServer.close(() => {
+  httpServer.close(async () => {
+    await fileTransferService.cleanup();
     redis.disconnect();
     console.log('🛑 Server closed');
   });
@@ -847,7 +462,8 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   console.log('👋 SIGINT received, shutting down gracefully');
   clearInterval(connectionRateCleanup);
-  httpServer.close(() => {
+  httpServer.close(async () => {
+    await fileTransferService.cleanup();
     redis.disconnect();
     console.log('🛑 Server closed');
   });
