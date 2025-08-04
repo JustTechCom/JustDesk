@@ -1,8 +1,10 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Monitor, Play, Square, AlertCircle } from 'lucide-react';
 
 export default function ScreenShare({ stream, isSharing, onStartShare, onStopShare, error }) {
   const videoRef = useRef(null);
+  const [withCamera, setWithCamera] = useState(false);
+  const [withMic, setWithMic] = useState(false);
 
   useEffect(() => {
     if (videoRef.current && stream) {
@@ -24,12 +26,30 @@ export default function ScreenShare({ stream, isSharing, onStartShare, onStopSha
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <Monitor className="w-20 h-20 text-gray-500 mx-auto mb-4" />
-              <p className="text-gray-400 mb-6">
+              <p className="text-gray-400 mb-4">
                 {error || "Click 'Start Sharing' to begin screen sharing"}
               </p>
+              <div className="flex justify-center space-x-4 mb-4">
+                <label className="flex items-center space-x-2 text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={withCamera}
+                    onChange={e => setWithCamera(e.target.checked)}
+                  />
+                  <span>Camera</span>
+                </label>
+                <label className="flex items-center space-x-2 text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={withMic}
+                    onChange={e => setWithMic(e.target.checked)}
+                  />
+                  <span>Microphone</span>
+                </label>
+              </div>
               {!isSharing && (
                 <button
-                  onClick={onStartShare}
+                  onClick={() => onStartShare({ withCamera, withMic })}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors flex items-center mx-auto"
                 >
                   <Play className="w-5 h-5 mr-2" />
@@ -68,3 +88,4 @@ export default function ScreenShare({ stream, isSharing, onStartShare, onStopSha
     </div>
   );
 }
+

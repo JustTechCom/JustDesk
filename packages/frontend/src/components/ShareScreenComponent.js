@@ -63,10 +63,10 @@ export default function ShareScreenComponent() {
     });
   };
 
-  const handleStartShare = async () => {
+  const handleStartShare = async (mediaOptions = {}) => {
     try {
       console.log('🎥 Starting screen share...');
-      await startScreenShare();
+      await startScreenShare(mediaOptions);
       
       // Screen sharing başladığında timer'ı başlat
       const shareStartTime = Date.now();
