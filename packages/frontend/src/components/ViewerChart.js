@@ -33,7 +33,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function ViewerChart({ data }) {
   return (
     <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/20 h-64">
-      <h3 className="text-lg font-semibold text-white mb-4">Viewer Analytics (last 60 min)</h3>
+      <h3 className="text-lg font-semibold text-white mb-4">Viewer Analytics (first hour)</h3>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#555" />
