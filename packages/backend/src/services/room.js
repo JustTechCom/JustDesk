@@ -102,22 +102,25 @@ class RoomService {
     const event = JSON.stringify({ viewerId, nickname, timestamp: now, action });
     await this.redis.zadd(eventsKey, now, event);
     await this.redis.expire(eventsKey, 2 * 60 * 60);
-    const cutoff = now - 60 * 60 * 1000;
+    const room = await this.getRoom(roomId);
+    const cutoff = room && room.sharingStartTime ? room.sharingStartTime : now - 60 * 60 * 1000;
     await this.redis.zremrangebyscore(eventsKey, 0, cutoff);
   }
 
   async getViewerStats(roomId) {
     const eventsKey = `${this.roomPrefix}${roomId}${this.eventsSuffix}`;
-    const now = Date.now();
-    const cutoff = now - 60 * 60 * 1000;
-    const rawEvents = await this.redis.zrangebyscore(eventsKey, cutoff, '+inf');
+    const room = await this.getRoom(roomId);
+    if (!room || !room.sharingStartTime) return [];
+    const sharingStartTime = room.sharingStartTime;
+    const upperBound = sharingStartTime + 60 * 60 * 1000;
+    const rawEvents = await this.redis.zrangebyscore(eventsKey, sharingStartTime, upperBound);
     const events = rawEvents.map((e) => JSON.parse(e)).sort((a, b) => a.timestamp - b.timestamp);
 
     let stats = [];
     let viewerCount = 0;
     let index = 0;
     for (let i = 0; i < 60; i++) {
-      const end = cutoff + (i + 1) * 60 * 1000;
+      const end = sharingStartTime + (i + 1) * 60 * 1000;
       const minuteEvents = [];
       while (index < events.length && events[index].timestamp < end) {
         viewerCount += events[index].action === 'join' ? 1 : -1;
