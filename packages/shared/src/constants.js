@@ -25,7 +25,12 @@ module.exports = {
     VIEWER_LEFT: 'viewer-left',
     VIEWER_DISCONNECTED: 'viewer-disconnected',
     HOST_DISCONNECTED: 'host-disconnected',
-    
+
+    // File transfer events
+    FILE_META: 'file-meta',
+    FILE_CHUNK: 'file-chunk',
+    FILE_COMPLETE: 'file-complete',
+
     // Error events
     ERROR: 'error',
     CONNECTION_ERROR: 'connection-error',
