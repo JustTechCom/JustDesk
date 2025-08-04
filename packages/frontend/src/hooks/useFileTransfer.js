@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { EVENTS } from '@justdesk/shared/constants';
+import { EVENTS } from '@justdesk/shared';
 
 const CHUNK_SIZE = 16 * 1024; // 16KB
 
