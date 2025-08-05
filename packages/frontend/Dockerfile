@@ -4,7 +4,8 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+# Use wildcard on package-lock.json to avoid build errors when the lockfile is absent
+COPY package.json package-lock.json* ./
 RUN npm install
 
 # Copy source files

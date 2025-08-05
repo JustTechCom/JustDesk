@@ -15,6 +15,7 @@ Web-based remote desktop solution that requires no installation. Share your scre
 - 🎯 **Simple** - Share with just an ID and password
 - 📱 **Responsive** - Mobile-friendly interface
 - 📈 **Viewer Analytics** - Real-time chart of viewer counts
+- 🎤 **Audio & Video Controls** - Toggle microphone and camera when sharing
 
 ## 🚀 Quick Start
 
