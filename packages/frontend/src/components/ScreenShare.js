@@ -1,4 +1,4 @@
- 
+
 import { useRef, useEffect } from 'react';
 import {
   Monitor,
@@ -22,7 +22,8 @@ export default function ScreenShare({
   onToggleCamera,
   onToggleMicrophone
 }) {
-  const videoRef = useRef(null); 
+  const videoRef = useRef(null);
+
 
   useEffect(() => {
     if (videoRef.current && stream) {
@@ -43,7 +44,7 @@ export default function ScreenShare({
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <Monitor className="w-20 h-20 text-gray-500 mx-auto mb-4" /> 
+              <Monitor className="w-20 h-20 text-gray-500 mx-auto mb-4" />
               <p className="text-gray-400 mb-6">
                 {error || "Click 'Start Sharing' to begin screen sharing"}
               </p>
@@ -71,7 +72,6 @@ export default function ScreenShare({
                     Start Sharing
                   </button>
                 </>
- 
               )}
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function ScreenShare({
 
       {/* Controls */}
       {isSharing && (
-        <div className="mt-4 flex items-center justify-between"> 
+        <div className="mt-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <Monitor className="w-4 h-4 text-green-400" />
@@ -109,7 +109,7 @@ export default function ScreenShare({
                 <MicOff className="w-4 h-4 text-gray-400" />
               )}
               <span className="text-white text-sm">Mic</span>
-            </div> 
+            </div>
           </div>
           <button
             onClick={onStopShare}

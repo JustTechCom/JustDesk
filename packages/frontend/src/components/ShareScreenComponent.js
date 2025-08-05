@@ -69,7 +69,7 @@ export default function ShareScreenComponent() {
   const handleStartShare = async () => {
     try {
       console.log('🎥 Starting screen share...');
-      await startScreenShare(cameraEnabled, microphoneEnabled); 
+      await startScreenShare(cameraEnabled, microphoneEnabled);
       
       // Screen sharing başladığında timer'ı başlat
       const shareStartTime = Date.now();

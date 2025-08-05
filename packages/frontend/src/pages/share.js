@@ -105,9 +105,8 @@ export default function ShareScreen() {
 
   const handleStartShare = async (mediaOptions = {}) => {
     try {
-      console.log('🎥 Starting screen share...'); 
+      console.log('🎥 Starting screen share...');
       await startScreenShare(cameraEnabled, microphoneEnabled);
- 
 
       // Sharing başladığında timer'ı başlat
       const shareStartTime = Date.now();
