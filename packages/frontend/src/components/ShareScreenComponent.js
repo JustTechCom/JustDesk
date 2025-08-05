@@ -65,7 +65,7 @@ export default function ShareScreenComponent() {
       }
     });
   };
-
+ 
   const handleStartShare = async () => {
     try {
       console.log('🎥 Starting screen share...');

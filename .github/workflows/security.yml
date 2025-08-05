@@ -10,6 +10,8 @@ on:
 permissions:
   contents: read
   security-events: write
+env:
+  GITHUB_TOKEN: ${{ secrets.TOKEN }}
 jobs:
   security-scan:
     runs-on: ubuntu-latest
@@ -64,7 +66,7 @@ jobs:
     
     - name: Build Docker images
       run: |
-        docker build -t justdesk-frontend ./packages/frontend
+        docker build -t justdesk-frontend -f packages/frontend/Dockerfile .
         docker build -t justdesk-backend ./packages/backend
     
     - name: Run Trivy on Docker images
@@ -73,6 +75,3 @@ jobs:
           aquasec/trivy image justdesk-frontend
         docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
           aquasec/trivy image justdesk-backend
-  
-  env:
-  GITHUB_TOKEN: ${{ secrets.TOKEN }}

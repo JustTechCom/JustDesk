@@ -1,3 +1,4 @@
+
 import { useRef, useEffect } from 'react';
 import {
   Monitor,
@@ -22,6 +23,7 @@ export default function ScreenShare({
   onToggleMicrophone
 }) {
   const videoRef = useRef(null);
+
 
   useEffect(() => {
     if (videoRef.current && stream) {

@@ -103,7 +103,7 @@ export default function ShareScreen() {
     });
   };
 
-  const handleStartShare = async () => {
+  const handleStartShare = async (mediaOptions = {}) => {
     try {
       console.log('🎥 Starting screen share...');
       await startScreenShare(cameraEnabled, microphoneEnabled);
