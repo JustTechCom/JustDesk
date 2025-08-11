@@ -26,9 +26,9 @@ RUN addgroup -g 1001 -S nodejs \
  && adduser -S nextjs -u 1001
 
 # Build sonrası dosyaları al
-COPY --from=builder /app/public            ./public
-COPY --from=builder /app/.next/standalone  ./
-COPY --from=builder /app/.next/static      ./.next/static
+COPY --from=builder /app/packages/frontend/public           ./public
+COPY --from=builder /app/packages/frontend/.next/standalone ./
+COPY --from=builder /app/packages/frontend/.next/static     ./.next/static
 
 # Sahiplik ayarları
 RUN chown -R nextjs:nodejs /app
