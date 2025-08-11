@@ -9,6 +9,7 @@ const routes = require('./routes');
 const socketHandler = require('./sockets');
 const connections = require('./utils/connections');
 const { redis } = require('./utils/redis');
+const logger = require('./utils/logger');
 
 const app = express();
 const httpServer = createServer(app);
@@ -58,7 +59,7 @@ io.use((socket, next) => {
 io.on('connection', socketHandler(io));
 
 app.use((err, req, res, next) => {
-  console.error('Express error:', err);
+  logger.error('Express error:', err);
 
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({ error: 'File too large' });
@@ -98,13 +99,13 @@ setInterval(async () => {
     }
   }
 
-  if (cleanedCount > 0) {
-    console.log(`🧹 Cleaned up ${cleanedCount} expired connections`);
-  }
+    if (cleanedCount > 0) {
+      logger.info(`🧹 Cleaned up ${cleanedCount} expired connections`);
+    }
 }, 10 * 60 * 1000);
 
-setInterval(async () => {
-  console.log('🕐 Checking for session timeouts...');
+  setInterval(async () => {
+    logger.info('🕐 Checking for session timeouts...');
 
   try {
     const keys = await redis.keys('room:*');
@@ -136,31 +137,31 @@ setInterval(async () => {
       }
     }
 
-    if (timeoutCount > 0) {
-      console.log(`⏰ Cleaned up ${timeoutCount} expired sessions`);
+      if (timeoutCount > 0) {
+        logger.info(`⏰ Cleaned up ${timeoutCount} expired sessions`);
+      }
+    } catch (error) {
+      logger.error('❌ Error in session timeout checker:', error);
     }
-  } catch (error) {
-    console.error('❌ Error in session timeout checker:', error);
-  }
-}, 30 * 1000);
+  }, 30 * 1000);
 
 const PORT = config.app.port;
-httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 JustDesk backend running on port ${PORT}`);
-});
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    logger.info(`🚀 JustDesk backend running on port ${PORT}`);
+  });
 
 process.on('SIGTERM', () => {
   clearInterval(connectionRateCleanup);
   httpServer.close(() => {
-    redis.disconnect();
-    console.log('🛑 Server closed');
+      redis.disconnect();
+      logger.info('🛑 Server closed');
+    });
   });
-});
 
 process.on('SIGINT', () => {
   clearInterval(connectionRateCleanup);
   httpServer.close(() => {
-    redis.disconnect();
-    console.log('🛑 Server closed');
+      redis.disconnect();
+      logger.info('🛑 Server closed');
+    });
   });
-});

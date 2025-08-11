@@ -20,12 +20,7 @@ const envSchema = Joi.object({
 
 const { value: env, error } = envSchema.validate(process.env, { abortEarly: false });
 
-if (error) {
-  console.error('❌ Environment validation error:', error.details.map(d => d.message).join(', '));
-  process.exit(1);
-}
-
-module.exports = {
+const config = {
   app: {
     env: env.NODE_ENV,
     port: parseInt(env.PORT, 10),
@@ -71,4 +66,12 @@ module.exports = {
     file: env.LOG_FILE
   }
 };
+
+module.exports = config;
+
+if (error) {
+  const logger = require('../utils/logger');
+  logger.error('❌ Environment validation error:', error.details.map(d => d.message).join(', '));
+  process.exit(1);
+}
 

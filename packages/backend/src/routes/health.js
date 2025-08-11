@@ -2,6 +2,7 @@ const express = require('express');
 const { healthLimiter } = require('../middleware/rateLimit');
 const { getRedisHealth } = require('../utils/redis');
 const connections = require('../utils/connections');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -27,14 +28,14 @@ router.get('/health', healthLimiter, async (req, res) => {
     });
 
     res.json(healthData);
-  } catch (error) {
-    console.error('Health check error:', error);
-    res.status(503).json({
-      status: 'error',
-      timestamp: new Date().toISOString(),
-      error: 'Health check failed',
-    });
-  }
-});
+    } catch (error) {
+      logger.error('Health check error:', error);
+      res.status(503).json({
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: 'Health check failed',
+      });
+    }
+  });
 
 module.exports = router;

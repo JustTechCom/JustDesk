@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const RoomService = require('../services/room');
 const { redis, getRedisHealth } = require('../utils/redis');
 const connections = require('../utils/connections');
+const logger = require('../utils/logger');
 
 const roomService = new RoomService(redis);
 
@@ -15,12 +16,12 @@ function generatePassword() {
 
 module.exports = (io) => {
   return (socket) => {
-    console.log(`✅ New socket connection: ${socket.id}`);
+      logger.info(`✅ New socket connection: ${socket.id}`);
 
     socket.emit('server-status', { connected: true });
 
     socket.on('create-room', async (callback) => {
-      console.log(`🏠 Creating room for socket: ${socket.id}`);
+        logger.info(`🏠 Creating room for socket: ${socket.id}`);
 
       try {
         const redisStatus = await getRedisHealth();
@@ -71,7 +72,7 @@ module.exports = (io) => {
           });
         }
       } catch (error) {
-        console.error('❌ Error creating room:', error);
+          logger.error('❌ Error creating room:', error);
         const errorResponse = {
           success: false,
           error: 'Failed to create room: ' + error.message,
@@ -85,7 +86,7 @@ module.exports = (io) => {
     });
 
     socket.on('join-room', async ({ roomId, password, nickname }, callback) => {
-      console.log(`🚪 Joining room ${roomId} for socket: ${socket.id}`);
+        logger.info(`🚪 Joining room ${roomId} for socket: ${socket.id}`);
 
       if (!roomId || !password || !/^\d{9}$/.test(roomId)) {
         callback({ success: false, error: 'Invalid room ID or password format' });
@@ -141,7 +142,7 @@ module.exports = (io) => {
 
         callback({ success: true, hostId: updatedRoom.hostId });
       } catch (error) {
-        console.error('❌ Error joining room:', error);
+        logger.error('❌ Error joining room:', error);
         callback({ success: false, error: 'Failed to join room: ' + error.message });
       }
     });
@@ -161,7 +162,7 @@ module.exports = (io) => {
           });
         }
       } catch (error) {
-        console.error('❌ Error updating sharing start time:', error);
+        logger.error('❌ Error updating sharing start time:', error);
       }
     });
 
@@ -183,7 +184,7 @@ module.exports = (io) => {
           });
         }
       } catch (error) {
-        console.error('❌ Error updating sharing stop time:', error);
+        logger.error('❌ Error updating sharing stop time:', error);
       }
     });
 
@@ -262,7 +263,7 @@ module.exports = (io) => {
     });
 
     socket.on('disconnect', async () => {
-      console.log(`👋 Socket disconnected: ${socket.id}`);
+        logger.info(`👋 Socket disconnected: ${socket.id}`);
 
       const connection = connections.get(socket.id);
       if (!connection) return;
@@ -274,7 +275,7 @@ module.exports = (io) => {
           const roomData = await redis.get(`room:${roomId}`);
           if (roomData) {
             const room = JSON.parse(roomData);
-            console.log(`📢 Notifying ${room.participants.length} viewers about host disconnect`);
+              logger.info(`📢 Notifying ${room.participants.length} viewers about host disconnect`);
           }
           await roomService.closeRoom(roomId);
           socket.to(roomId).emit('host-disconnected');
@@ -305,7 +306,7 @@ module.exports = (io) => {
           }
         }
       } catch (error) {
-        console.error('❌ Error handling disconnect:', error);
+          logger.error('❌ Error handling disconnect:', error);
       }
 
       connections.delete(socket.id);
