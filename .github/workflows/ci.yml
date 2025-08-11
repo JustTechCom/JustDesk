@@ -202,3 +202,11 @@ jobs:
         context: ./packages/frontend
         push: false
         tags: justdesk-frontend:latest
+
+    - name: Build backend only (no push)
+      uses: docker/build-push-action@v5
+      if: steps.check-secrets.outputs.has-secrets == 'false'
+      with:
+        context: ./packages/backend
+        push: false
+        tags: justdesk-backend:latest
