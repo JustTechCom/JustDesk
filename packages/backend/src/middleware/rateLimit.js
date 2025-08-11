@@ -1,44 +1,52 @@
 const rateLimit = require('express-rate-limit');
-const config = require('../config');
-const logger = require('../utils/logger');
 
-// General rate limiter
 const generalLimiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
-  message: 'Too many requests from this IP, please try again later.',
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes',
+  },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req, res) => {
-    logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
-    res.status(429).json({
-      error: 'Too many requests',
-      retryAfter: req.rateLimit.resetTime
-    });
-  }
 });
 
-// Strict rate limiter for room creation
-const roomCreationLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 5, // 5 rooms per 5 minutes
-  message: 'Too many rooms created, please try again later.',
-  skipSuccessfulRequests: false,
-  keyGenerator: (req) => {
-    // Use socket ID if available, otherwise fall back to IP
-    return req.socketId || req.ip;
-  }
+const healthLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: {
+    error: 'Too many health check requests, please try again later.',
+    retryAfter: '1 minute',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// Connection attempt limiter
-const connectionLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // 10 attempts per minute
-  message: 'Too many connection attempts, please try again later.'
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: {
+    error: 'Too many API requests, please try again later.',
+    retryAfter: '15 minutes',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const strictLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 5,
+  message: {
+    error: 'Rate limit exceeded for sensitive operation.',
+    retryAfter: '5 minutes',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 module.exports = {
   generalLimiter,
-  roomCreationLimiter,
-  connectionLimiter
+  healthLimiter,
+  apiLimiter,
+  strictLimiter,
 };
