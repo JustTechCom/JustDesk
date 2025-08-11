@@ -1,6 +1,7 @@
 const express = require('express');
 const { strictLimiter } = require('../middleware/rateLimit');
 const { redis } = require('../utils/redis');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -29,10 +30,10 @@ router.get('/room/:roomId', strictLimiter, async (req, res) => {
       sharingStartTime: room.sharingStartTime,
       isSharing: room.isSharing || false,
     });
-  } catch (error) {
-    console.error('Room info error:', error);
-    res.status(500).json({ error: 'Failed to get room info' });
-  }
-});
+    } catch (error) {
+      logger.error('Room info error:', error);
+      res.status(500).json({ error: 'Failed to get room info' });
+    }
+  });
 
 module.exports = router;
