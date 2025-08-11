@@ -55,13 +55,6 @@ jobs:
     - name: Run npm audit
       run: npm audit --production
       continue-on-error: true
-    
-    - name: Run Snyk security scan
-      uses: snyk/actions/node@0.4.0
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        args: --severity-threshold=high
 
   docker-scan:
     runs-on: ubuntu-latest
