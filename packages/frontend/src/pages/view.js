@@ -6,6 +6,7 @@ import Layout from '../components/Layout';
 import RemoteViewer from '../components/RemoteViewer';
 import useWebRTC from '../hooks/useWebRTC';
 import useSocket from '../hooks/useSocket';
+import useConnection from '../hooks/useConnection';
 
 export default function ViewScreen() {
   const router = useRouter();
@@ -19,7 +20,18 @@ export default function ViewScreen() {
   const [nicknameSubmitted, setNicknameSubmitted] = useState(false);
 
   const { socket } = useSocket();
-  const { remoteStream } = useWebRTC(socket);
+  const { remoteStream, peers } = useWebRTC(socket);
+  const { connectionStats, monitorConnection } = useConnection();
+
+  useEffect(() => {
+    const peerArray = Object.values(peers || {});
+    if (peerArray.length > 0 && peerArray[0]?._pc) {
+      const cleanup = monitorConnection(peerArray[0]._pc);
+      return () => {
+        if (cleanup) cleanup();
+      };
+    }
+  }, [peers, monitorConnection]);
 
   // Handle router query in useEffect to avoid SSR issues
   useEffect(() => {
@@ -131,9 +143,14 @@ export default function ViewScreen() {
                 <Monitor className="w-6 h-6 text-blue-400" />
                 <h1 className="text-xl font-semibold text-white">Remote Desktop View</h1>
                 {connected && (
-                  <span className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm">
-                    Connected
-                  </span>
+                  <>
+                    <span className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm">
+                      Connected
+                    </span>
+                    <span className="px-3 py-1 bg-blue-600/20 text-blue-400 rounded-full text-sm">
+                      Bitrate: {connectionStats.bitrate} kbps | Latency: {connectionStats.latency} ms
+                    </span>
+                  </>
                 )}
               </div>
 
