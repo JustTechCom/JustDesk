@@ -28,7 +28,9 @@ RUN addgroup -g 1001 -S nodejs \
 # Build sonrası dosyaları al
 COPY --from=builder /app/packages/frontend/public           ./public
 COPY --from=builder /app/packages/frontend/.next/standalone ./
-COPY --from=builder /app/packages/frontend/.next/static     ./.next/static
+# Tüm .next dizinini kopyalayarak static dosyaların eksiksiz
+# taşınmasını sağla
+COPY --from=builder /app/packages/frontend/.next            ./.next
 
 # Sahiplik ayarları
 RUN chown -R nextjs:nodejs /app
