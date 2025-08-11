@@ -9,6 +9,7 @@ Bu dökümantasyon, projeyi kurmak, çalıştırmak ve sorun gidermek için ihti
 
 | Belge | Açıklama |
 |-------|----------|
+| [CHANGELOG.md](CHANGELOG.md) | Projedeki önemli değişikliklerin kaydı. |
 | [API.md](API.md) | Uygulamanın sunduğu API uç noktalarının detaylı açıklamaları. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | JustDesk’in sistem mimarisi ve bileşen yapısı hakkında genel bilgi. |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Sunucuya kurulum ve dağıtım adımları. |
