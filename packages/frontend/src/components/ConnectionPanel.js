@@ -11,10 +11,27 @@ export default function ConnectionPanel({
   const [copiedField, setCopiedField] = useState('');
   const [sessionDuration, setSessionDuration] = useState('--:--');
 
-  const copyToClipboard = (text, field) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(''), 2000);
+  const copyToClipboard = async (text, field) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(''), 2000);
+    } catch (err) {
+      console.error('Failed to copy to clipboard', err);
+      alert('Failed to copy to clipboard');
+    }
   };
 
   const shareLink = () => {
