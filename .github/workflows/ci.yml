@@ -24,8 +24,7 @@ jobs:
         # Cache'i devre dışı bırak, manual yapacağız
         # cache: 'npm'
 
-    - name: Install frontend dependencies
-      working-directory: ./packages/frontend
+    - name: Install dependencies
       run: |
         if [ -f package-lock.json ]; then
           npm ci
@@ -40,15 +39,6 @@ jobs:
           echo "Frontend lint passed"
         else
           echo "Frontend lint failed, but continuing..."
-        fi
-
-    - name: Install backend dependencies
-      working-directory: ./packages/backend
-      run: |
-        if [ -f package-lock.json ]; then
-          npm ci
-        else
-          npm install
         fi
 
     - name: Run backend linter
@@ -70,15 +60,13 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         # Cache'i devre dışı bırak
-
-    - name: Install frontend dependencies
-      working-directory: ./packages/frontend
+    - name: Install dependencies
       run: |
         if [ -f package-lock.json ]; then
           npm ci
@@ -96,15 +84,6 @@ jobs:
         fi
       env:
         CI: true
-
-    - name: Install backend dependencies
-      working-directory: ./packages/backend
-      run: |
-        if [ -f package-lock.json ]; then
-          npm ci
-        else
-          npm install
-        fi
 
     - name: Run backend tests
       working-directory: ./packages/backend
@@ -135,9 +114,7 @@ jobs:
       with:
         node-version: '18'
         # Cache'i devre dışı bırak
-
-    - name: Install frontend dependencies
-      working-directory: ./packages/frontend
+    - name: Install dependencies
       run: |
         if [ -f package-lock.json ]; then
           npm ci
@@ -148,15 +125,6 @@ jobs:
     - name: Build frontend
       working-directory: ./packages/frontend
       run: npm run build
-
-    - name: Install backend dependencies
-      working-directory: ./packages/backend
-      run: |
-        if [ -f package-lock.json ]; then
-          npm ci
-        else
-          npm install
-        fi
 
     # Backend'de build script olmayabilir, opsiyonel yap
     - name: Prepare backend
