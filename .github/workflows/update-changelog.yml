@@ -1,0 +1,32 @@
+name: Update Changelog
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  changelog:
+    if: "!contains(github.event.head_commit.message, 'skip changelog')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install
+      - name: Generate changelog
+        run: npm run changelog
+      - name: Commit changelog
+        run: |
+          if [[ -n $(git status --porcelain docs/CHANGELOG.md) ]]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add docs/CHANGELOG.md
+            git commit -m "chore: update changelog [skip changelog]"
+            git push
+          fi
