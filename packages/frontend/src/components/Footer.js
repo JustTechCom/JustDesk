@@ -1,4 +1,4 @@
-    import Link from 'next/link';
+import Link from 'next/link';
 import { Monitor, Twitter, Github, Linkedin } from 'lucide-react';
 
 export default function Footer() {
@@ -26,11 +26,6 @@ export default function Footer() {
               <li>
                 <Link href="/features" className="text-gray-400 hover:text-white transition-colors">
                   Features
-                </Link>
-              </li>
-              <li>
-                <Link href="/changelog" className="text-gray-400 hover:text-white transition-colors">
-                  Changelog
                 </Link>
               </li>
             </ul>
@@ -64,7 +59,8 @@ export default function Footer() {
           </div>
 
           {/* Company */}
-          <div><h3 className="text-white font-semibold mb-4">Company</h3>
+          <div>
+            <h3 className="text-white font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
@@ -92,17 +88,24 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="mt-8 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 text-sm">
-            © 2024 JustDesk – Released under the MIT License
-          </p>
+          <p className="text-gray-400 text-sm">© 2024 JustDesk – Released under the MIT License</p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
-            <a href="https://twitter.com/justdesk" className="text-gray-400 hover:text-white transition-colors">
+            <a
+              href="https://twitter.com/justdesk"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
               <Twitter className="w-5 h-5" />
             </a>
-            <a href="https://github.com/kadirertancam/JustDesk" className="text-gray-400 hover:text-white transition-colors">
+            <a
+              href="https://github.com/kadirertancam/JustDesk"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
               <Github className="w-5 h-5" />
             </a>
-            <a href="https://linkedin.com/company/justdesk" className="text-gray-400 hover:text-white transition-colors">
+            <a
+              href="https://linkedin.com/company/justdesk"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
               <Linkedin className="w-5 h-5" />
             </a>
           </div>
@@ -111,4 +114,3 @@ export default function Footer() {
     </footer>
   );
 }
-          
