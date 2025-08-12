@@ -3,7 +3,7 @@ const config = require('../config');
 const logger = require('./logger');
 
 let redis;
-let redisHealthCache = {
+const redisHealthCache = {
   status: 'unknown',
   lastCheck: 0,
   cacheDuration: 30000, // 30 seconds cache
