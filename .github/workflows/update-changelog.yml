@@ -6,6 +6,10 @@ on:
       - main
       - master
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   changelog:
     if: "!contains(github.event.head_commit.message, 'skip changelog')"
@@ -21,12 +25,19 @@ jobs:
         run: npm install
       - name: Generate changelog
         run: npm run changelog
-      - name: Commit changelog
+      - name: Check for changelog changes
+        id: changelog
         run: |
           if [[ -n $(git status --porcelain docs/CHANGELOG.md) ]]; then
-            git config user.name "github-actions"
-            git config user.email "github-actions@github.com"
-            git add docs/CHANGELOG.md
-            git commit -m "chore: update changelog [skip changelog]"
-            git push
+            echo "changed=true" >> $GITHUB_ENV
           fi
+      - name: Create Pull Request
+        if: env.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: chore: update changelog [skip changelog]
+          title: chore: update changelog
+          body: Automated update of the changelog.
+          branch: chore/update-changelog
+          base: ${{ github.ref_name }}
+          add-paths: docs/CHANGELOG.md
