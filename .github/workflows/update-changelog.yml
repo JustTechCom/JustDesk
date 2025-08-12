@@ -14,9 +14,17 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'skip changelog')"
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.CHANGELOG_APP_ID }}
+          private_key: ${{ secrets.CHANGELOG_APP_PRIVATE_KEY }}
+          installation_id: ${{ secrets.CHANGELOG_INSTALLATION_ID }}
       - name: Check out repository
         uses: actions/checkout@v4
         with:
+          token: ${{ steps.app-token.outputs.token }}
           ref: ${{ github.ref_name }}
           fetch-depth: 0
       - name: Set up Node.js
@@ -29,9 +37,18 @@ jobs:
         run: npm run changelog
       - name: Commit changelog
         run: |
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config user.name "CHANGELOGS-COM[bot]"
+          git config user.email "CHANGELOGS-COM[bot]@users.noreply.github.com"
           git add docs/CHANGELOG.md
           git commit -m "chore: update changelog [skip changelog]" || echo "No changes to commit"
-      - name: Push changes
-        run: git push
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: "chore: update changelog [skip changelog]"
+          committer: "CHANGELOGS-COM[bot] <CHANGELOGS-COM[bot]@users.noreply.github.com>"
+          author: "CHANGELOGS-COM[bot] <CHANGELOGS-COM[bot]@users.noreply.github.com>"
+          title: "chore: update changelog"
+          body: "Automated update of CHANGELOG.md"
+          branch: changelog-update-${{ github.run_id }}
+          base: ${{ github.ref_name }}
