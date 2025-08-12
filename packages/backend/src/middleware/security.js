@@ -1,6 +1,6 @@
 const helmet = require('helmet');
 const compression = require('compression');
-const xss = require('xss');
+const DOMPurify = require('isomorphic-dompurify');
 
 // Security middleware setup
 const securityMiddleware = [
@@ -49,7 +49,7 @@ const securityMiddleware = [
     if (req.body) {
       Object.keys(req.body).forEach(key => {
         if (typeof req.body[key] === 'string') {
-          req.body[key] = xss(req.body[key]);
+          req.body[key] = DOMPurify.sanitize(req.body[key]);
         }
       });
     }
