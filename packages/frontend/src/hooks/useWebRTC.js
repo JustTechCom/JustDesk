@@ -6,6 +6,7 @@ export default function useWebRTC(socket) {
   const [remoteStream, setRemoteStream] = useState(null);
   const [peers, setPeers] = useState({});
   const peersRef = useRef({});
+  const stopScreenShareRef = useRef(null);
 
   const startScreenShare = async (useCamera = false, useMicrophone = false) => {
     try {
@@ -73,6 +74,9 @@ export default function useWebRTC(socket) {
     console.log('✅ Screen share stopped and peers cleaned up');
   };
 
+  // Keep a ref to the latest stopScreenShare for cleanup on unmount
+  stopScreenShareRef.current = stopScreenShare;
+
   const createPeer = (targetId, initiator, stream) => {
     console.log(`🔗 Creating peer connection: ${targetId}, initiator: ${initiator}`);
     
@@ -126,6 +130,14 @@ export default function useWebRTC(socket) {
 
     return peer;
   };
+
+  useEffect(() => {
+    return () => {
+      if (stopScreenShareRef.current) {
+        stopScreenShareRef.current();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
