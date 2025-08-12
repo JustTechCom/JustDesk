@@ -23,13 +23,11 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "docker:clean": "docker-compose down -v",
-    "setup": "npm install && lerna bootstrap",
-    "changelog": "conventional-changelog -p angular -i docs/CHANGELOG.md -s"
+    "setup": "npm install && lerna bootstrap"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.7.1",
     "@commitlint/config-conventional": "^17.7.0",
-    "conventional-changelog-cli": "^5.0.0",
     "eslint": "^8.48.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
