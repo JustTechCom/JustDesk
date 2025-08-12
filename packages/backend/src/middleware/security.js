@@ -1,5 +1,6 @@
 const helmet = require('helmet');
 const compression = require('compression');
+const xss = require('xss');
 
 // Security middleware setup
 const securityMiddleware = [
@@ -45,11 +46,10 @@ const securityMiddleware = [
   
   // Request sanitization
   (req, res, next) => {
-    // Remove any potential XSS attempts from common fields
     if (req.body) {
       Object.keys(req.body).forEach(key => {
         if (typeof req.body[key] === 'string') {
-          req.body[key] = req.body[key].replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+          req.body[key] = xss(req.body[key]);
         }
       });
     }
