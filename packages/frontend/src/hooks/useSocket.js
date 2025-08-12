@@ -12,12 +12,14 @@ export default function useSocket() {
                       process.env.NEXT_PUBLIC_WS_URL || 
                       'http://localhost:3001';
     
-    console.log('🔌 Backend URL:', backendUrl);
-    console.log('🌍 Environment:', process.env.NODE_ENV);
-    console.log('🔧 All env vars:', {
-      API_URL: process.env.NEXT_PUBLIC_API_URL,
-      WS_URL: process.env.NEXT_PUBLIC_WS_URL
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔌 Backend URL:', backendUrl);
+      console.log('🌍 Environment:', process.env.NODE_ENV);
+      console.log('🔧 All env vars:', {
+        API_URL: process.env.NEXT_PUBLIC_API_URL,
+        WS_URL: process.env.NEXT_PUBLIC_WS_URL
+      });
+    }
     
     const newSocket = io(backendUrl, {
       transports: ['polling', 'websocket'], // Polling'i önce dene
