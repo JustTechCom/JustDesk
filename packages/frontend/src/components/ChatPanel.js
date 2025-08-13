@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export default function ChatPanel({ socket, className }) {
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 

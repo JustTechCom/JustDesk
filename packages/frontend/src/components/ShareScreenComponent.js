@@ -346,6 +346,10 @@ export default function ShareScreenComponent() {
                 <ViewerChart data={viewerStats} />
               </div>
             </div>
+
+            <div className="mt-8">
+              <ChatPanel socket={socket} className="h-80" />
+            </div>
           </div>
         </div>
       </div>
