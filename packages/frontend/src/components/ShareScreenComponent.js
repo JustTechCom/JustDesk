@@ -6,6 +6,7 @@ import Layout from './Layout';
 import ScreenShare from './ScreenShare';
 import ConnectionPanel from './ConnectionPanel';
 import ViewerChart from './ViewerChart';
+import ChatPanel from './ChatPanel';
 import useWebRTC from '../hooks/useWebRTC';
 import useSocket from '../hooks/useSocket';
 
@@ -319,7 +320,7 @@ export default function ShareScreenComponent() {
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-8">
                 <ScreenShare
                   stream={stream}
                   isSharing={isSharing}
@@ -328,9 +329,10 @@ export default function ShareScreenComponent() {
                   error={error}
                   cameraEnabled={cameraEnabled}
                   microphoneEnabled={microphoneEnabled}
-                  onToggleCamera={() => setCameraEnabled(prev => !prev)}
-                  onToggleMicrophone={() => setMicrophoneEnabled(prev => !prev)}
+                  onToggleCamera={() => setCameraEnabled((prev) => !prev)}
+                  onToggleMicrophone={() => setMicrophoneEnabled((prev) => !prev)}
                 />
+                <ChatPanel socket={socket} />
               </div>
 
               <div className="lg:col-span-1 space-y-8">

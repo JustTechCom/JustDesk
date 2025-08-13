@@ -4,6 +4,7 @@ import Head from 'next/head';
 import { Monitor, Loader, XCircle, Maximize, Volume2 } from 'lucide-react';
 import Layout from './Layout';
 import RemoteViewer from './RemoteViewer';
+import ChatPanel from './ChatPanel';
 import useWebRTC from '../hooks/useWebRTC';
 import useSocket from '../hooks/useSocket';
 
@@ -147,11 +148,16 @@ export default function ViewScreenComponent() {
               </div>
             </div>
           ) : (
-            <RemoteViewer
-              stream={remoteStream}
-              connected={connected}
-              roomId={roomId}
-            />
+            <div className="flex gap-4 h-[calc(100vh-200px)]">
+              <div className="flex-1">
+                <RemoteViewer
+                  stream={remoteStream}
+                  connected={connected}
+                  roomId={roomId}
+                />
+              </div>
+              <ChatPanel socket={socket} className="w-72 h-full" />
+            </div>
           )}
         </div>
       </div>
