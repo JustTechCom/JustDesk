@@ -1,55 +1,47 @@
 const crypto = require('crypto');
 const config = require('../config');
+const { setValue, getValue, deleteValue } = require('../utils/redis');
 
 class AuthService {
   constructor() {
-    this.sessionStore = new Map();
+    // Sessions are stored in Redis
   }
 
   generateSessionToken() {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  createSession(userId, metadata = {}) {
+  async createSession(userId, metadata = {}) {
     const token = this.generateSessionToken();
     const session = {
       userId,
       token,
       created: Date.now(),
       lastAccess: Date.now(),
-      ...metadata
+      ...metadata,
     };
 
-    this.sessionStore.set(token, session);
-    
-    // Clean up expired sessions periodically
-    setTimeout(() => {
-      this.sessionStore.delete(token);
-    }, config.room.sessionTimeout);
-
+    await setValue(token, JSON.stringify(session), config.room.sessionTimeout);
     return token;
   }
 
-  validateSession(token) {
-    const session = this.sessionStore.get(token);
-    
-    if (!session) {
+  async validateSession(token) {
+    const data = await getValue(token);
+
+    if (!data) {
       return null;
     }
 
-    // Check if session is expired
-    if (Date.now() - session.created > config.room.sessionTimeout) {
-      this.sessionStore.delete(token);
-      return null;
-    }
-
-    // Update last access time
+    const session = JSON.parse(data);
     session.lastAccess = Date.now();
+
+    await setValue(token, JSON.stringify(session), config.room.sessionTimeout);
     return session;
   }
 
-  revokeSession(token) {
-    return this.sessionStore.delete(token);
+  async revokeSession(token) {
+    const result = await deleteValue(token);
+    return result > 0;
   }
 
   // Rate limiting helper

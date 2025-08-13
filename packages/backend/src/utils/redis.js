@@ -82,4 +82,19 @@ async function getRedisHealth() {
   return redisHealthCache.status;
 }
 
-module.exports = { redis, getRedisHealth };
+async function setValue(key, value, ttl) {
+  if (ttl) {
+    return redis.set(key, value, 'PX', ttl);
+  }
+  return redis.set(key, value);
+}
+
+async function getValue(key) {
+  return redis.get(key);
+}
+
+async function deleteValue(key) {
+  return redis.del(key);
+}
+
+module.exports = { redis, getRedisHealth, setValue, getValue, deleteValue };
