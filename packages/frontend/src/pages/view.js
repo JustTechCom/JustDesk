@@ -199,7 +199,12 @@ export default function ViewScreen() {
             </div>
           ) : (
             <>
-              <RemoteViewer stream={remoteStream} connected={connected} roomId={roomId} />
+              <RemoteViewer
+                stream={remoteStream}
+                connected={connected}
+                roomId={roomId}
+                socket={socket}
+              />
             </>
           )}
         </div>

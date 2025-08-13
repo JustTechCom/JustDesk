@@ -71,6 +71,35 @@ export default function ShareScreenComponent() {
     return () => socket.off('viewer-stats', handleStats);
   }, [socket]);
 
+  // Apply incoming control events from viewers
+  useEffect(() => {
+    if (!socket) return;
+
+    const applyControlEvent = ({ type, x, y, key, button }) => {
+      const clientX = x * window.innerWidth;
+      const clientY = y * window.innerHeight;
+      const target = document.elementFromPoint(clientX, clientY) || document.body;
+
+      if (type === 'mousemove') {
+        const evt = new MouseEvent('mousemove', { clientX, clientY, bubbles: true });
+        target.dispatchEvent(evt);
+      } else if (type === 'click') {
+        const down = new MouseEvent('mousedown', { clientX, clientY, bubbles: true, button });
+        const up = new MouseEvent('mouseup', { clientX, clientY, bubbles: true, button });
+        const click = new MouseEvent('click', { clientX, clientY, bubbles: true, button });
+        target.dispatchEvent(down);
+        target.dispatchEvent(up);
+        target.dispatchEvent(click);
+      } else if (type === 'keydown') {
+        const evt = new KeyboardEvent('keydown', { key, bubbles: true });
+        document.dispatchEvent(evt);
+      }
+    };
+
+    socket.on('control-event', applyControlEvent);
+    return () => socket.off('control-event', applyControlEvent);
+  }, [socket]);
+
   const createRoom = () => {
     if (!socket) {
       console.error('Socket not available');

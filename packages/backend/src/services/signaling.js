@@ -17,6 +17,7 @@ class SignalingService {
     socket.on('offer', (data) => this.handleOffer(socket, data));
     socket.on('answer', (data) => this.handleAnswer(socket, data));
     socket.on('ice-candidate', (data) => this.handleIceCandidate(socket, data));
+    socket.on('control-event', (data) => this.handleControlEvent(socket, data));
     socket.on('disconnect', () => this.handleDisconnect(socket));
   }
 
@@ -147,6 +148,20 @@ class SignalingService {
     logger.debug(`Forwarding ICE candidate from ${socket.id} to ${to}`);
     socket.to(to).emit('ice-candidate', {
       candidate,
+      from: socket.id
+    });
+  }
+
+  async handleControlEvent(socket, event) {
+    const connection = this.connections.get(socket.id);
+    if (!connection) return;
+
+    const { roomId } = connection;
+    const room = await roomService.getRoom(roomId);
+    if (!room) return;
+
+    socket.to(room.hostId).emit('control-event', {
+      ...event,
       from: socket.id
     });
   }

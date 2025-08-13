@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Maximize2, Minimize2, Volume2, VolumeX, Download } from 'lucide-react';
 
-export default function RemoteViewer({ stream, connected, roomId }) {
+export default function RemoteViewer({ stream, connected, roomId, socket }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -46,8 +46,50 @@ export default function RemoteViewer({ stream, connected, roomId }) {
     }
   };
 
+  // Focus container for keyboard events
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.tabIndex = 0;
+      containerRef.current.focus();
+    }
+  }, []);
+
+  const emitControlEvent = (event) => {
+    if (!socket || !connected) return;
+    socket.emit('control-event', {
+      roomId,
+      ...event,
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!videoRef.current) return;
+    const rect = videoRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    emitControlEvent({ type: 'mousemove', x, y });
+  };
+
+  const handleClick = (e) => {
+    if (!videoRef.current) return;
+    const rect = videoRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    emitControlEvent({ type: 'click', x, y, button: e.button });
+  };
+
+  const handleKeyDown = (e) => {
+    emitControlEvent({ type: 'keydown', key: e.key });
+  };
+
   return (
-    <div ref={containerRef} className="relative bg-black rounded-xl overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative bg-black rounded-xl overflow-hidden"
+      onMouseMove={handleMouseMove}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+    >
       {connected && stream ? (
         <>
           <video
