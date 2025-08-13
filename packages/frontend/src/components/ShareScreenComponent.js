@@ -6,6 +6,7 @@ import Layout from './Layout';
 import ScreenShare from './ScreenShare';
 import ConnectionPanel from './ConnectionPanel';
 import ViewerChart from './ViewerChart';
+import ChatPanel from './ChatPanel';
 import useWebRTC from '../hooks/useWebRTC';
 import useSocket from '../hooks/useSocket';
 
@@ -328,8 +329,8 @@ export default function ShareScreenComponent() {
                   error={error}
                   cameraEnabled={cameraEnabled}
                   microphoneEnabled={microphoneEnabled}
-                  onToggleCamera={() => setCameraEnabled(prev => !prev)}
-                  onToggleMicrophone={() => setMicrophoneEnabled(prev => !prev)}
+                  onToggleCamera={() => setCameraEnabled((prev) => !prev)}
+                  onToggleMicrophone={() => setMicrophoneEnabled((prev) => !prev)}
                 />
               </div>
 
@@ -342,6 +343,7 @@ export default function ShareScreenComponent() {
                   sharingStartTime={sharingStartTime}
                 />
                 <ViewerChart data={viewerStats} />
+                <ChatPanel socket={socket} />
               </div>
             </div>
           </div>
