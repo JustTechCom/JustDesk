@@ -156,9 +156,8 @@ export default function ViewScreenComponent() {
                   roomId={roomId}
                 />
               </div>
-              <div className="w-72">
-                <ChatPanel socket={socket} className="h-full" />
-              </div>
+              <ChatPanel socket={socket} className="w-72 h-full" />
+
             </div>
           )}
         </div>

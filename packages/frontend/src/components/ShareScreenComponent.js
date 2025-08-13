@@ -320,7 +320,7 @@ export default function ShareScreenComponent() {
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-8">
                 <ScreenShare
                   stream={stream}
                   isSharing={isSharing}
@@ -332,6 +332,7 @@ export default function ShareScreenComponent() {
                   onToggleCamera={() => setCameraEnabled((prev) => !prev)}
                   onToggleMicrophone={() => setMicrophoneEnabled((prev) => !prev)}
                 />
+                <ChatPanel socket={socket} />
               </div>
 
               <div className="lg:col-span-1 space-y-8">
