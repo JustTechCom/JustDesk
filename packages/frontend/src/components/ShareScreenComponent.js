@@ -347,7 +347,7 @@ export default function ShareScreenComponent() {
             </div>
 
             <div className="mt-8">
-              <ChatPanel socket={socket} />
+              <ChatPanel socket={socket} className="h-80" />
             </div>
           </div>
         </div>

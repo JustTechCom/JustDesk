@@ -157,7 +157,7 @@ export default function ViewScreenComponent() {
                 />
               </div>
               <div className="w-72">
-                <ChatPanel socket={socket} />
+                <ChatPanel socket={socket} className="h-full" />
               </div>
             </div>
           )}
