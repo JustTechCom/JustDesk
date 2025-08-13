@@ -35,10 +35,12 @@ router.post('/recordings', async (req, res) => {
   try {
     await writeFile(resolvedPath, data);
     res.json({ success: true });
+
   } catch (err) {
     res.status(500).json({ error: 'Failed to save recording' });
   }
 });
 
 module.exports = router;
+
 
