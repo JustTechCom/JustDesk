@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function ChatPanel({ socket }) {
+export default function ChatPanel({ socket, className = 'h-80' }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
@@ -26,7 +26,7 @@ export default function ChatPanel({ socket }) {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 flex flex-col h-80">
+    <div className={`bg-gray-800 rounded-lg p-4 flex flex-col ${className}`}>
       <div className="flex-1 overflow-y-auto mb-4">
         {messages.map((msg, idx) => (
           <div key={idx} className="mb-2">
