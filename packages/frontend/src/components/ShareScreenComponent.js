@@ -343,8 +343,11 @@ export default function ShareScreenComponent() {
                   sharingStartTime={sharingStartTime}
                 />
                 <ViewerChart data={viewerStats} />
-                <ChatPanel socket={socket} />
               </div>
+            </div>
+
+            <div className="mt-8">
+              <ChatPanel socket={socket} />
             </div>
           </div>
         </div>

@@ -26,7 +26,7 @@ export default function ChatPanel({ socket }) {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 flex flex-col h-64">
+    <div className="bg-gray-800 rounded-lg p-4 flex flex-col h-80">
       <div className="flex-1 overflow-y-auto mb-4">
         {messages.map((msg, idx) => (
           <div key={idx} className="mb-2">
