@@ -148,16 +148,18 @@ export default function ViewScreenComponent() {
               </div>
             </div>
           ) : (
-            <>
-              <RemoteViewer
-                stream={remoteStream}
-                connected={connected}
-                roomId={roomId}
-              />
-              <div className="mt-4">
+            <div className="flex gap-4 h-[calc(100vh-200px)]">
+              <div className="flex-1">
+                <RemoteViewer
+                  stream={remoteStream}
+                  connected={connected}
+                  roomId={roomId}
+                />
+              </div>
+              <div className="w-72">
                 <ChatPanel socket={socket} />
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
