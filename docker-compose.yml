@@ -3,7 +3,7 @@ services:
     build:
       context: .                                 # <-- repo kökü
       dockerfile: packages/frontend/Dockerfile   # <-- dosyanın gerçek yolu
-    image: ${ECR_REGISTRY:-myapp}/myapp-frontend:${IMAGE_TAG:-latest}   # ECR'e pushlamak için
+    image: 585780419860.dkr.ecr.eu-west-2.amazonaws.com/justdesk-frontend:${IMAGE_TAG:-latest}   # ECR'e pushlamak için
     ports:
       - "3003:3000"
     environment:
@@ -18,7 +18,7 @@ services:
     build:
       context: .                                 # <-- repo kökü
       dockerfile: packages/backend/Dockerfile
-    image: ${ECR_REGISTRY:-myapp}/myapp-backend:${IMAGE_TAG:-latest}
+    image: 585780419860.dkr.ecr.eu-west-2.amazonaws.com/justdesk-backend:${IMAGE_TAG:-latest}
     ports:
       - "3002:3001"
     environment:
@@ -47,3 +47,4 @@ networks:
 
 volumes:
   redis_data:
+
