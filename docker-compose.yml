@@ -1,13 +1,14 @@
 services:
   frontend:
     build:
-      context: ./packages/frontend
-      dockerfile: Dockerfile
+      context: .                                 # <-- repo kökü
+      dockerfile: packages/frontend/Dockerfile   # <-- dosyanın gerçek yolu
+    image: ${ECR_REGISTRY}/myapp-frontend:${IMAGE_TAG}   # ECR'e pushlamak için
     ports:
       - "3003:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:3002
-      - NEXT_PUBLIC_WS_URL=ws://localhost:3002
+      - NEXT_PUBLIC_WS_URL=ws://backend:3002      # localhost yerine servis adı (lokalde compose içi iletişim)
     depends_on:
       - backend
     networks:
@@ -15,22 +16,23 @@ services:
 
   backend:
     build:
-      context: ./packages/backend
-      dockerfile: Dockerfile
+      context: .                                 # <-- repo kökü
+      dockerfile: packages/backend/Dockerfile
+    image: ${ECR_REGISTRY}/myapp-backend:${IMAGE_TAG}
     ports:
       - "3002:3001"
     environment:
       - NODE_ENV=production
       - REDIS_HOST=redis
       - REDIS_PASSWORD=defaultpassword
-      - FRONTEND_URL=http://localhost:3000
+      - FRONTEND_URL=http://frontend:3000
     depends_on:
       - redis
     networks:
       - justdesk
 
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine       # Bunu ECR'ye push etmene gerek yok
     command: redis-server --requirepass defaultpassword
     ports:
       - "6379:6379"
