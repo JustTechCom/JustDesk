@@ -17,7 +17,7 @@ export default function Home() {
     if (!roomId || !password) return;
     
     setLoading(true);
-    router.push(`/view?room=${roomId}&pwd=${password}`);
+    router.push(`/view?room=${encodeURIComponent(roomId)}&pwd=${encodeURIComponent(password)}`);
   };
 
   return (
