@@ -1,3 +1,4 @@
+const sanitizeHtml = require('sanitize-html');
 const Joi = require('joi');
 
 // Room validation schemas
@@ -92,10 +93,7 @@ module.exports = {
   
   sanitizeInput: (input) => {
     if (typeof input !== 'string') return input;
-    
-    // Remove any HTML tags and trim whitespace
-    return input
-      .replace(/<[^>]*>/g, '')
-      .trim();
+    // Remove all HTML tags and attributes using sanitize-html, then trim whitespace
+    return sanitizeHtml(input, { allowedTags: [], allowedAttributes: {} }).trim();
   }
 };
