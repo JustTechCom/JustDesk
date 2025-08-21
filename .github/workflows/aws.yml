@@ -35,12 +35,9 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Compose ile build/push yapacağız. Image tag olarak commit SHA kullanalım.
       - name: Set IMAGE_TAG
         run: echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
 
-      # docker-compose.yml içinde ilgili servisin image satırı ECR'yi göstermeli:
-      # image: 585780419860.dkr.ecr.eu-west-2.amazonaws.com/myapp:${IMAGE_TAG}
       - name: Build images via Docker Compose
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
@@ -53,8 +50,6 @@ jobs:
         run: |
           docker compose -f docker-compose.yml push
 
-      # ECS task definition'a yeni image'i yaz
-      # Tek konteyner için container-name ve image URI tek değer.
       - name: Compose export image URI (single service)
         id: image_uri
         env:
@@ -63,23 +58,24 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }} # örn: myapp
         run: |
           echo "uri=${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
+
       - name: Download task definition
         run: |
-              aws ecs describe-task-definition --task-definition justdesk-task \
-              --query taskDefinition > task-definition.json
-      
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
+          aws ecs describe-task-definition --task-definition justdesk-task \
+          --query taskDefinition > task-definition.json
+
+      - name: Render task definition
+        id: render-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-            task-definition: task-definition.json
-            container-name: justdesk-backend-container
-            image: ${{ steps.build-image.outputs.image }} 
-            
+          task-definition: task-definition.json
+          container-name: justdesk-backend-container   # Task Def içindeki containerName ile birebir aynı olmalı
+          image: ${{ steps.image_uri.outputs.uri }}
+
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
           service: ${{ secrets.ECS_SERVICE }}
           cluster: ${{ secrets.ECS_CLUSTER }}
           wait-for-service-stability: true
