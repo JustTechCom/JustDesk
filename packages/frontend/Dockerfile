@@ -2,42 +2,50 @@
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# 1) Kök manifest’leri kopyala
+# 1) Root manifestleri (workspaces/lerna) kopyala
 COPY package.json package-lock.json* lerna.json ./
 
-# 2) Workspace paket manifest’lerini kopyala
+# 2) Workspace manifestleri (yalnızca gerekenler)
 COPY packages/shared/package.json    packages/shared/
 COPY packages/backend/package.json   packages/backend/
 COPY packages/frontend/package.json  packages/frontend/
 
-# 3) Artık npm workspaces devrede, yüklemeyi yap
-RUN npm install
+# 3) Bağımlılıkları kur (deterministik)
+RUN npm ci --workspaces --include-workspace-root
 
-# 4) Tüm kaynak kodu kopyala ve build et
+# 4) Kaynak kodu kopyala
 COPY . .
-RUN npm run build
+
+# 5) Sadece frontend’i build et (Next 14, output=standalone olmalı)
+#    next.config.js içinde: module.exports = { output: 'standalone' }
+RUN npm run build -w @justdesk/frontend
+
 
 # ---- Production stage ----
 FROM node:18-alpine AS runner
+ENV NODE_ENV=production
 WORKDIR /app
 
-# Non-root kullanıcı oluştur
+# Non-root kullanıcı
 RUN addgroup -g 1001 -S nodejs \
  && adduser -S nextjs -u 1001
 
-# Build sonrası dosyaları al
-COPY --from=builder /app/packages/frontend/public           ./public
-COPY --from=builder /app/packages/frontend/.next/standalone ./
-# Tüm .next dizinini kopyalayarak static dosyaların eksiksiz
-# taşınmasını sağla
-COPY --from=builder /app/packages/frontend/.next            ./.next
+# --- Standalone dosyalarını doğru yerlere kopyala ---
+# .next/standalone ağacının KENDİ klasör yapısını koruyarak /app'e taşıyoruz.
+# Bu yapıda "packages/frontend/server.js" ve minimal node_modules bulunur.
+COPY --from=builder /app/packages/frontend/.next/standalone ./ 
 
-# Sahiplik ayarları
+# Static ve public dosyaları, runtime'da beklenen yollara kopyala
+COPY --from=builder /app/packages/frontend/public                    ./packages/frontend/public
+COPY --from=builder /app/packages/frontend/.next/static              ./packages/frontend/.next/static
+
+# Sahiplik
 RUN chown -R nextjs:nodejs /app
-
 USER nextjs
+
 EXPOSE 3000
-ENV PORT=3000 NODE_ENV=production
+ENV PORT=3000
 
-CMD ["npm", "run", "start"]
-
+# Monorepo'da standalone server giriş noktası:
+# /app/packages/frontend/server.js
+CMD ["node", "packages/frontend/server.js"]
