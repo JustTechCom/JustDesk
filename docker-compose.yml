@@ -25,7 +25,7 @@ services:
       - NODE_ENV=production
       - REDIS_HOST=redis
       - REDIS_PASSWORD=defaultpassword
-      - FRONTEND_URL=http://frontend:3000
+      - FRONTEND_URL=http://frontend:3001
       - SESSION_SECRET=please-change-me
       - JWT_SECRET=please-change-me-too
       - REDIS_URL=redis://:defaultpassword@redis:6379
