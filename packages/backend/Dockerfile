@@ -1,17 +1,18 @@
-# ---------- Backend ----------
 FROM node:18-alpine
 
+ENV NODE_ENV=production
 WORKDIR /app
 
-# 1. Sadece backend manifestlerini kopyala
-COPY packages/backend/package*.json ./ 
+# Root lockfile + backend package.json kopyala
+COPY package.json package-lock.json ./
+COPY packages/backend/package.json ./packages/backend/package.json
 
-# 2. Bağımlılıkları kur
-RUN npm install --omit=dev
+# Yalnızca backend workspace'ini prod olarak kur
+RUN npm ci --workspace @justdesk/backend --omit=dev --ignore-scripts
 
-# 3. Backend kodunu kopyala
-COPY packages/backend/ ./
+# Backend kaynak kodunu getir
+COPY packages/backend/ ./packages/backend/
 
+WORKDIR /app/packages/backend
 EXPOSE 3001
-
 CMD ["node", "src/server.js"]
