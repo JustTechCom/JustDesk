@@ -1,15 +1,13 @@
 # ---------- Backend ----------
-FROM node:18-alpine AS backend
+FROM node:18-alpine
 
-ENV NODE_ENV=production
 WORKDIR /app/packages/backend
 
-COPY  . .
-RUN npm install
+COPY package*.json ./
+RUN npm install --omit=dev
 
+COPY packages/backend/ ./
 
-ENV PORT=3001
 EXPOSE 3001
+
 CMD ["node", "src/server.js"]
-
-
