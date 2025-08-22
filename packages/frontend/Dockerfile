@@ -39,4 +39,5 @@ USER nextjs
 EXPOSE 3000
 ENV PORT=3000 NODE_ENV=production
 
-CMD ["node", "server.js"]
+CMD ["npm", "run", "start"]
+
