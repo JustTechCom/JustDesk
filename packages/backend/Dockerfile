@@ -2,31 +2,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Kaynak kodunu kopyala
+# Install dependencies
+COPY package.json ./
+RUN npm install
+
+
+# Copy source files
 COPY . .
 
-# Direkt bağımlılıkları kur
-RUN npm install express \
-    compression \
-    cors \
-    dotenv \
-    express-rate-limit \
-    helmet \
-    ioredis \
-    isomorphic-dompurify \
-    joi \
-    socket.io \
-    uuid \
-    winston \
-    sanitize-html
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S backend -u 1001
 
-# DevDependencies’leri de istiyorsan (örn test için):
-# RUN npm install --save-dev eslint husky jest nodemon supertest
-
-# Kullanıcı ayarları
-RUN addgroup -g 1001 -S nodejs \
-  && adduser -S backend -u 1001 \
-  && chown -R backend:nodejs /app
+# Set ownership
+RUN chown -R backend:nodejs /app
 
 USER backend
 
