@@ -1,0 +1,76 @@
+name: Deploy Monolithic Task (2 containers)
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+  ECS_CLUSTER: myapp-cluster
+  ECS_SERVICE: justdesk-service              # tek servis
+  TASK_FAMILY: justdesk-task                 # tek task family
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set IMAGE_TAG
+        run: echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      # backend build/push
+      - name: Build & Push backend
+        run: |
+          docker compose -f docker-compose.yml build backend
+          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/justdesk-backend:${{ env.IMAGE_TAG }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/justdesk-backend:${{ env.IMAGE_TAG }}
+
+      # frontend build/push
+      - name: Build & Push frontend
+        run: |
+          docker compose -f docker-compose.yml build frontend
+          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/justdesk-frontend:${{ env.IMAGE_TAG }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/justdesk-frontend:${{ env.IMAGE_TAG }}
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.TASK_FAMILY }} \
+            --query taskDefinition > task-definition.json
+
+      # 1. container: backend
+      - id: render1
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: justdesk-backend-container
+          image: ${{ steps.login-ecr.outputs.registry }}/justdesk-backend:${{ env.IMAGE_TAG }}
+
+      # 2. container: frontend (bir önceki çıktıyı input olarak kullan)
+      - id: render2
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.render1.outputs.task-definition }}
+          container-name: justdesk-frontend-container
+          image: ${{ steps.login-ecr.outputs.registry }}/justdesk-frontend:${{ env.IMAGE_TAG }}
+
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render2.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
