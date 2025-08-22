@@ -1,22 +1,25 @@
+version: "3.9"
+
 services:
   frontend:
     build:
-      context: .                                 # <-- repo kökü
-      dockerfile: packages/frontend/Dockerfile   # <-- dosyanın gerçek yolu
-    image: 585780419860.dkr.ecr.eu-west-2.amazonaws.com/justdesk-frontend:${IMAGE_TAG:-latest}   # ECR'e pushlamak için
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+    image: 585780419860.dkr.ecr.eu-west-2.amazonaws.com/justdesk-frontend:${IMAGE_TAG:-latest}
     ports:
       - "3003:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:3002
-      - NEXT_PUBLIC_WS_URL=ws://backend:3002      # localhost yerine servis adı (lokalde compose içi iletişim)
+      - NEXT_PUBLIC_API_URL=https://yk088ow00440s884sscc4woo.18.132.204.101.sslip.io
+      - NEXT_PUBLIC_WS_URL=wss://yk088ow00440s884sscc4woo.18.132.204.101.sslip.io
     depends_on:
       - backend
     networks:
       - justdesk
+    restart: unless-stopped
 
   backend:
     build:
-      context: .                                 # <-- repo kökü
+      context: .
       dockerfile: packages/backend/Dockerfile
     image: 585780419860.dkr.ecr.eu-west-2.amazonaws.com/justdesk-backend:${IMAGE_TAG:-latest}
     ports:
@@ -25,25 +28,27 @@ services:
       - NODE_ENV=production
       - REDIS_HOST=redis
       - REDIS_PASSWORD=defaultpassword
-      - FRONTEND_URL=http://frontend:3001
+      # Frontend origin MUTLAKA dış erişilebilir domain olmalı:
+      - FRONTEND_URL=https://swo4s40woc0so8wgcokok80g.18.132.204.101.sslip.io
+      # Prod'da güçlü, benzersiz değerler ver:
       - SESSION_SECRET=please-change-me
       - JWT_SECRET=please-change-me-too
       - REDIS_URL=redis://:defaultpassword@redis:6379
-
     depends_on:
       - redis
     networks:
       - justdesk
+    restart: unless-stopped
 
   redis:
-    image: redis:7-alpine       # Bunu ECR'ye push etmene gerek yok
+    image: redis:7-alpine
     command: redis-server --requirepass defaultpassword
-    ports:
-      - "6379:6379"
+    # Güvenlik için internetten açma; ports kaldırıldı.
     volumes:
       - redis_data:/data
     networks:
       - justdesk
+    restart: unless-stopped
 
 networks:
   justdesk:
@@ -51,4 +56,3 @@ networks:
 
 volumes:
   redis_data:
-
