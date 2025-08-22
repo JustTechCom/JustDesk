@@ -26,6 +26,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PASSWORD=defaultpassword
       - FRONTEND_URL=http://frontend:3000
+      - SESSION_SECRET=please-change-me
+      - JWT_SECRET=please-change-me-too
+
     depends_on:
       - redis
     networks:
