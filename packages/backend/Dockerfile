@@ -8,7 +8,7 @@ WORKDIR /app/packages/backend
 COPY packages/backend/package.json ./
 
 # Lock yoksa npm ci çalışmaz; install kullan
-RUN npm install --omit=dev --ignore-scripts
+RUN npm install
 
 # Uygulama kodunu kopyala
 COPY packages/backend/ ./
@@ -16,3 +16,4 @@ COPY packages/backend/ ./
 ENV PORT=3001
 EXPOSE 3001
 CMD ["node", "src/server.js"]
+
