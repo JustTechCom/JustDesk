@@ -28,6 +28,7 @@ services:
       - FRONTEND_URL=http://frontend:3000
       - SESSION_SECRET=please-change-me
       - JWT_SECRET=please-change-me-too
+      - REDIS_URL=redis://:defaultpassword@redis:6379
 
     depends_on:
       - redis
