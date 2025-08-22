@@ -11,7 +11,7 @@ env:
   AWS_REGION: eu-west-2
   ECS_CLUSTER: myapp-cluster
   ECS_SERVICE: justdesk-service          # tek servis
-  TASK_FAMILY: justdesk-task             # tek task family (mevcut tanım)
+  TASK_FAMILY: justdesk-task             # tek task family
 
 jobs:
   deploy:
@@ -28,43 +28,26 @@ jobs:
       - id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set env
+      - name: Set env (ECR + TAG)
         run: |
           echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
           echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
 
-      # Backend build + tag (image ID üzerinden) + push
-      - name: Build backend
-        run: docker compose -f docker-compose.yml build backend
+      # Compose, ECR imajlarını üretip push eder (retag yok)
+      - name: Build images (backend + frontend)
+        run: docker compose -f docker-compose.yml build backend frontend
 
-      - name: Tag backend (from image ID)
-        run: |
-          IMG_ID=$(docker compose -f docker-compose.yml images -q backend)
-          docker tag "$IMG_ID" "$ECR_REGISTRY/justdesk-backend:${IMAGE_TAG}"
+      - name: Push images (backend + frontend)
+        run: docker compose -f docker-compose.yml push backend frontend
 
-      - name: Push backend
-        run: docker push "$ECR_REGISTRY/justdesk-backend:${IMAGE_TAG}"
-
-      # Frontend build + tag (image ID üzerinden) + push
-      - name: Build frontend
-        run: docker compose -f docker-compose.yml build frontend
-
-      - name: Tag frontend (from image ID)
-        run: |
-          IMG_ID=$(docker compose -f docker-compose.yml images -q frontend)
-          docker tag "$IMG_ID" "$ECR_REGISTRY/justdesk-frontend:${IMAGE_TAG}"
-
-      - name: Push frontend
-        run: docker push "$ECR_REGISTRY/justdesk-frontend:${IMAGE_TAG}"
-
-      # Mevcut task definition'ı indir
+      # Mevcut task definition’ı indir
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
             --task-definition ${{ env.TASK_FAMILY }} \
             --query taskDefinition > task-definition.json
 
-      # 1) Backend container image'ını render et
+      # 1) Backend container imajını güncelle
       - id: render_backend
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -72,7 +55,7 @@ jobs:
           container-name: justdesk-backend-container
           image: ${{ env.ECR_REGISTRY }}/justdesk-backend:${{ env.IMAGE_TAG }}
 
-      # 2) Frontend container image'ını (bir önceki çıktıyı baz alarak) render et
+      # 2) Frontend container imajını (bir önceki çıktıyı baz alarak) güncelle
       - id: render_frontend
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
