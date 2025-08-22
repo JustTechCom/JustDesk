@@ -1,26 +1,47 @@
-FROM node:18-alpine
-
-# İmajı daha deterministik yapmak için
+# -------- Build stage --------
+FROM node:18-alpine AS builder
 ENV NODE_ENV=production
-
 WORKDIR /app
 
-# 1) Sadece manifestleri kopyala (root + backend)
+# Root manifest
 COPY package.json package-lock.json ./
-COPY packages/backend/package.json ./packages/backend/package.json
 
-# 2) Tek seferde tüm workspaceler için prod bağımlılıkları kur
-RUN npm ci --omit=dev --workspaces --include-workspace-root
+# Workspace manifestleri (backend + shared)
+COPY packages/backend/package.json  packages/backend/
+COPY packages/shared/package.json   packages/shared/
 
-# 3) Kaynak kodu kopyala
+# Prod bağımlılıkları – script tetikleme!
+RUN npm ci --workspaces --include-workspace-root --omit=dev --ignore-scripts
+
+# Kaynak kod
 COPY . .
 
-# 4) Non-root kullanıcı
+# Eğer backend TypeScript ise ŞUNU AÇ:
+# RUN npm run build -w @justdesk/backend
+
+# -------- Runtime stage --------
+FROM node:18-alpine AS runner
+ENV NODE_ENV=production
+WORKDIR /app
+
+# Güvenli kullanıcı
 RUN addgroup -g 1001 -S nodejs \
- && adduser -S backend -u 1001 \
- && chown -R backend:nodejs /app
+ && adduser -S backend -u 1001
 
+# Sadece gerekenler
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/package.json ./
+
+# Sahiplik
+RUN chown -R backend:nodejs /app
 USER backend
-EXPOSE 3001
 
+EXPOSE 3001
+ENV PORT=3001
+
+# JS kullanıyorsan:
 CMD ["node", "packages/backend/src/server.js"]
+
+# TS kullanıyorsan (ve build satırını açtıysan):
+# CMD ["node", "packages/backend/dist/server.js"]
