@@ -2,26 +2,23 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install dependencies
-COPY package*.json ./
-RUN npm install --omit=dev
-RUN npm install --only=production
+# 1) Root + backend manifestlerini kopyala
+COPY package.json package-lock.json ./
+COPY packages/backend/package.json ./packages/backend/package.json
 
+# 2) Prod bağımlılıkları tek seferde kur
+RUN npm ci --omit=dev --workspaces --include-workspace-root
 
-# Copy source files
+# 3) Tüm source'u kopyala
 COPY . .
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S backend -u 1001
-
-# Set ownership
-RUN chown -R backend:nodejs /app
+# Non-root user
+RUN addgroup -g 1001 -S nodejs \
+  && adduser -S backend -u 1001 \
+  && chown -R backend:nodejs /app
 
 USER backend
 
 EXPOSE 3001
 
 CMD ["node", "packages/backend/src/server.js"]
-
-
