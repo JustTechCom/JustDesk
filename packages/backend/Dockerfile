@@ -22,5 +22,6 @@ USER backend
 
 EXPOSE 3001
 
-CMD ["node", "/packages/backend/src/server.js"]
+CMD ["node", "packages/backend/src/server.js"]
+
 
