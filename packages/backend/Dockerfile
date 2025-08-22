@@ -1,24 +1,21 @@
-FROM node:18-alpine
+# ---------- Backend ----------
+FROM node:18-alpine AS backend
 
-WORKDIR /app
+ENV NODE_ENV=production
+WORKDIR /app/packages/backend
 
-# Install dependencies
-COPY package.json ./
-RUN npm install
+# Sadece backend manifestlerini kopyala
+COPY packages/backend/package.json packages/backend/package-lock.json ./
 
+# Sadece backend bağımlılıklarını kur (workspace'e gerek yok)
+RUN npm ci --omit=dev --ignore-scripts
 
-# Copy source files
-COPY . .
+# Uygulama kodunu kopyala
+COPY packages/backend/ ./
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S backend -u 1001
-
-# Set ownership
-RUN chown -R backend:nodejs /app
-
-USER backend
-
+# Sağlık: container dışından port veriyorsan ENV ile al; default 3001
+ENV PORT=3001
 EXPOSE 3001
 
-CMD ["node", "packages/backend/src/server.js"]
+# Node direkt JS dosyanı çalıştıracak
+CMD ["node", "src/server.js"]
