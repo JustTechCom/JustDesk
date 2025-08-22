@@ -5,7 +5,6 @@ WORKDIR /app
 # Backend manifestlerini kopyala
 # package-lock backend klasöründe yoksa bu satır sorun çıkarmaz
 COPY packages/backend/package.json ./package.json
-COPY packages/backend/package-lock.json ./package-lock.json
 
 # Lock varsa ci, yoksa install
 RUN if [ -f package-lock.json ]; then \
@@ -31,3 +30,4 @@ USER backend
 
 EXPOSE 3001
 CMD ["node", "src/server.js"]
+
