@@ -6,7 +6,6 @@ import Layout from './Layout';
 import ScreenShare from './ScreenShare';
 import ConnectionPanel from './ConnectionPanel';
 import ViewerChart from './ViewerChart';
-import ChatPanel from './ChatPanel';
 import useWebRTC from '../hooks/useWebRTC';
 import useSocket from '../hooks/useSocket';
 
@@ -332,7 +331,6 @@ export default function ShareScreenComponent() {
                   onToggleCamera={() => setCameraEnabled((prev) => !prev)}
                   onToggleMicrophone={() => setMicrophoneEnabled((prev) => !prev)}
                 />
-                <ChatPanel socket={socket} />
               </div>
 
               <div className="lg:col-span-1 space-y-8">
@@ -347,9 +345,6 @@ export default function ShareScreenComponent() {
               </div>
             </div>
 
-            <div className="mt-8">
-              <ChatPanel socket={socket} className="h-80" />
-            </div>
           </div>
         </div>
       </div>
