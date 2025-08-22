@@ -1,25 +1,30 @@
-# -------- Build stage --------
+# =========================
+#  Build stage
+# =========================
 FROM node:18-alpine AS builder
 ENV NODE_ENV=production
 WORKDIR /app
 
-# Root manifest
+# 1) Root manifestleri kopyala
 COPY package.json package-lock.json ./
 
-# Workspace manifestleri (backend + shared)
-COPY packages/backend/package.json  packages/backend/
-COPY packages/shared/package.json   packages/shared/
+# 2) Workspace manifestleri – backend'in ihtiyaç duyabileceği iç paketler dahil
+# (frontend'i runtime'a taşımıyoruz ama manifestlerini kopyalamak install çözümlemesine yardımcı olur)
+COPY packages/*/package.json packages/
 
-# Prod bağımlılıkları – script tetikleme!
+# 3) Prod bağımlılıkları kur (script tetiklemeden!)
+#    Workspaces'i tam görmesi için include-workspace-root ile
 RUN npm ci --workspaces --include-workspace-root --omit=dev --ignore-scripts
 
-# Kaynak kod
+# 4) Tüm kaynak kodu kopyala
 COPY . .
 
-# Eğer backend TypeScript ise ŞUNU AÇ:
-# RUN npm run build -w @justdesk/backend
+# (Backend TypeScript DEĞİL — server.js CommonJS. Derleme gerekmiyor.)
 
-# -------- Runtime stage --------
+
+# =========================
+#  Runtime stage
+# =========================
 FROM node:18-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
@@ -28,7 +33,7 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs \
  && adduser -S backend -u 1001
 
-# Sadece gerekenler
+# Builder’dan sadece gerekli dosyaları al
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/package.json ./
@@ -37,11 +42,12 @@ COPY --from=builder /app/package.json ./
 RUN chown -R backend:nodejs /app
 USER backend
 
+# Opsiyonel: healthcheck (backend'e /health koyduysan aç)
+# HEALTHCHECK --interval=30s --timeout=3s \
+#   CMD wget -qO- http://localhost:3001/health || exit 1
+
 EXPOSE 3001
 ENV PORT=3001
 
-# JS kullanıyorsan:
+# CommonJS server (require kullanıyor)
 CMD ["node", "packages/backend/src/server.js"]
-
-# TS kullanıyorsan (ve build satırını açtıysan):
-# CMD ["node", "packages/backend/dist/server.js"]
